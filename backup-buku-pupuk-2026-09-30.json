@@ -1,0 +1,12 @@
+{
+  "app": "buku-pupuk",
+  "version": 1,
+  "createdAt": "2026-09-30T13:02:27+07:00",
+  "recordCount": 4,
+  "records": [
+    {"id":"3edbaecb-8209-4fec-8a5c-f1e297ce5bb4","type":"expense","date":"2026-09-30","name":"ongkos transportasi dari jembatan ke gudang desa","product":"","qty":0,"amount":50000,"paid":0,"ref":"","note":"bayar ongkos bang jol"},
+    {"id":"55267ebd-36d3-4d28-9059-923febdfcaad","type":"withdraw","date":"2026-09-29","name":"Bank BSI","product":"","qty":0,"amount":10000000,"paid":0,"ref":"","note":"penarikan pertama dari bank membeli pupuk"},
+    {"id":"b2100558-aaa0-47a7-8502-150744baee5f","type":"expense","date":"2026-09-30","name":"upah mengangkat pupuk dari mobil ke gudang desa","product":"","qty":0,"amount":100000,"paid":0,"ref":"","note":"ongkos semua pupuk "},
+    {"id":"bd7ac8fb-c88f-4693-ae64-bab27ffcc60b","type":"expense","date":"2026-09-30","name":"upah mengangkat pupuk dari truk ke mobil","product":"","qty":0,"amount":100000,"paid":0,"ref":"","note":"ongkos semua pupuk"}
+  ]
+}
