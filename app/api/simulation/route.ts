@@ -1,5 +1,5 @@
 import {env} from 'cloudflare:workers';
-import {canonicalInputs, validSavedSimulation, validSimulationInput, type SavedSimulation} from '@/lib/simulation';
+import {canonicalInputs, normalizeSavedSimulation, validSimulationInput} from '@/lib/simulation';
 
 const headers = {'Cache-Control': 'private, no-store'};
 type StoredPlan = {inputs: string; updated_at: string};
@@ -7,9 +7,10 @@ export async function GET() {
   try {
     if (!env.DB) throw Error('DB missing');
     const row = await env.DB.prepare("SELECT inputs,updated_at FROM simulation_settings WHERE id='utama'").first<StoredPlan>();
-    const plan: SavedSimulation | null = row ? {inputs: JSON.parse(row.inputs), updatedAt: row.updated_at} : null;
-    if (plan && !validSavedSimulation(plan)) throw Error('Invalid saved plan');
-    return Response.json({plan}, {headers});
+    const storedInputs: unknown = row ? JSON.parse(row.inputs) : null;
+    const plan = row ? normalizeSavedSimulation({inputs: storedInputs, updatedAt: row.updated_at}) : null;
+    if (row && !plan) throw Error('Invalid saved plan');
+    return Response.json({plan, migrated: !!plan && JSON.stringify(storedInputs) !== canonicalInputs(plan.inputs)}, {headers});
   } catch (error) {
     console.error(error);
     return Response.json({error: 'Simulasi tersimpan belum dapat dimuat. Coba lagi.'}, {status: 503, headers});
