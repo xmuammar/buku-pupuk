@@ -47,7 +47,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.2.0.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.2.1.apk`.
 
 ## Pengujian
 
@@ -86,3 +86,7 @@ Ini rencana pembagian; penyimpanan tidak membuat transaksi atau pembayaran honor
 Pengaturan disimpan sebagai properti `finance` di snapshot Drive dan cadangan JSON, dengan revision guard dan penolakan pemulihan apabila rencana berbeda. JSON lama tetap dapat dibaca. Gunakan APK terbaru sebagai satu perangkat aktif; APK lama tidak mengenali pengaturan Keuangan baru.
 
 Pengujian `android/tests/finance.test.ts` mencakup alokasi Rp1 juta, pembulatan, banyak pengawas, laba negatif, persentase/tanggal tidak valid, FIFO per produk, periode, saldo kas berbeda dari laba, backup dan konflik rencana. Harness DOM memeriksa menu, format uang, penyimpanan/pembukaan ulang, dan finance dalam cadangan lengkap.
+
+## Hak cipta — Android 1.2.1
+
+Tulisan “© 2026 · Hak cipta aplikasi milik Muammar, SST, M.Kom” ditampilkan pada footer setiap halaman, panel Menu lainnya, dan halaman pengaturan pertama. APK versionCode 4 memakai sertifikat pembaruan yang sama.

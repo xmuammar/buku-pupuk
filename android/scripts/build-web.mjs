@@ -5,11 +5,12 @@ import path from 'node:path';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),out=path.join(root,'android/native/assets');
 await rm(out,{recursive:true,force:true});await mkdir(out,{recursive:true});
 const receipt=path.join(root,'android/web/receipt.tsx'),native=path.join(root,'android/web/native.ts');
+const copyright=path.join(root,'android/web/copyright.tsx');
 const finance=path.join(root,'android/web/finance.tsx');
 const navigation=path.join(root,'android/web/navigation.tsx'),drivePanel=path.join(root,'android/web/drive-panel.tsx');
 function replaceOnce(source,anchor,replacement){if(!source.includes(anchor))throw Error('Mobile adapter anchor changed: '+anchor.slice(0,80));return source.replace(anchor,replacement);}
 const adapt={name:'android-app-adapter',setup(builder){
- builder.onLoad({filter:/\/app\/page\.tsx$/},async args=>{let source=await readFile(args.path,'utf8');source=`import Receipt from ${JSON.stringify(receipt)};\nimport {saveDrive,currentStatus} from ${JSON.stringify(native)};\nimport {MobileHeader,BottomNavigation} from ${JSON.stringify(navigation)};\nimport DrivePanel from ${JSON.stringify(drivePanel)};\nimport Finance from ${JSON.stringify(finance)};\n`+source;
+ builder.onLoad({filter:/\/app\/page\.tsx$/},async args=>{let source=await readFile(args.path,'utf8');source=`import Receipt from ${JSON.stringify(receipt)};\nimport {saveDrive,currentStatus} from ${JSON.stringify(native)};\nimport {MobileHeader,BottomNavigation} from ${JSON.stringify(navigation)};\nimport DrivePanel from ${JSON.stringify(drivePanel)};\nimport Finance from ${JSON.stringify(finance)};\nimport AppCopyright from ${JSON.stringify(copyright)};\n`+source;
   const start=source.indexOf('function exportCsv()'),end=source.indexOf('\nconst visible=',start);if(start<0||end<0)throw Error('CSV adapter anchor changed');
   const old=source.slice(start,end),csv=old.slice(old.indexOf("const cols="),old.indexOf('const url='));
   source=source.slice(0,start)+`async function exportCsv(){try{${csv}await saveDrive(csv,'text/csv','catatan-pupuk-'+new Date().toISOString().replace(/[:.]/g,'-')+'.csv');setNotice('CSV ditulis ke file Drive. Periksa status unggahan di aplikasi Drive.');}catch(e){setError((e as Error).message);}}`+source.slice(end);
@@ -30,6 +31,7 @@ const adapt={name:'android-app-adapter',setup(builder){
   source=replaceOnce(source,'<td>{r.qty?', '<td data-label="Jumlah">{r.qty?');
   source=replaceOnce(source,'<td className="money">','<td className="money" data-label="Nilai transaksi">');
   source=replaceOnce(source,"{tab==='Simulasi'?null:tab==='Anggota'?","{tab==='Keuangan'?<Finance rows={rows} loading={loading} recordsError={error}/>:tab==='Simulasi'?null:tab==='Anggota'?");
+  source=replaceOnce(source,'<footer>','<footer><AppCopyright/>');
   const actionIcons={'Pupuk masuk':'Package','Biaya angkut / bongkar':'Truck','Bayar distributor':'Wallet','Terima pelunasan':'ArrowDownToLine','Penarikan bank':'ArrowDownToLine'};
   for(const [text,icon] of Object.entries(actionIcons))source=source.replaceAll('>'+text+'</button>','><'+icon+' size={18}/>'+text+'</button>');
   return {contents:source,loader:'tsx',resolveDir:path.dirname(args.path)};
