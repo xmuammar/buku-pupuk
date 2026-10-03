@@ -47,7 +47,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.2.1.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.3.0.apk`.
 
 ## Pengujian
 
@@ -90,3 +90,13 @@ Pengujian `android/tests/finance.test.ts` mencakup alokasi Rp1 juta, pembulatan,
 ## Hak cipta — Android 1.2.1
 
 Tulisan “© 2026 · Hak cipta aplikasi milik Muammar, SST, M.Kom” ditampilkan pada footer setiap halaman, panel Menu lainnya, dan halaman pengaturan pertama. APK versionCode 4 memakai sertifikat pembaruan yang sama.
+
+## Login perangkat — Android 1.3.0
+
+Saat pertama kali membuka APK pada HP ini, pemilik membuat PIN 6–12 angka. Aplikasi meminta PIN saat pembukaan berikutnya; pengguna bisa mengunci aplikasi segera lewat Lainnya → Kunci aplikasi. Jika APK berada di latar selama 15 menit, akses terkunci ketika aplikasi dibuka kembali. Setelah lima PIN salah berturut-turut, akses menunggu lima menit; pelanggaran berikutnya menambah waktu tunggu sampai 60 menit.
+
+Verifikasi disimpan di SharedPreferences privat Android, dengan salt acak dan PBKDF2-HMAC-SHA256 180.000 putaran. PIN teks tidak ditulis ke jurnal transaksi, Google Drive, backup JSON, atau Git. Flag Secure menyembunyikan konten pada tangkapan layar serta pratinjau aplikasi terbaru. Jembatan native menolak baca / ubah data transaksi sebelum sesi dibuka. Database lokal baru dibaca setelah PIN benar.
+
+PIN ini mengunci aplikasi di satu HP, bukan identitas akun website atau login lintas perangkat. Sistem situs web tetap tidak mendapat login dari perubahan APK ini. Lupa PIN tidak dapat dipulihkan lewat Google Drive karena Drive hanya menyimpan data usaha, bukan kredensial; siapkan pemulihan HP hanya setelah perubahan tertunda berhasil dicadangkan.
+
+`android/tests/AuthEngineTest.java` mencakup pembuatan PIN, penolakan pola sederhana, tidak menyimpan PIN teks, salah PIN, lockout, pemulihan setelah masa tunggu, perubahan PIN, dan sesi terkunci.

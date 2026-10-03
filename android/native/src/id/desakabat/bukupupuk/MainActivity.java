@@ -11,6 +11,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.util.AtomicFile;
@@ -48,17 +49,31 @@ public final class MainActivity extends Activity {
     private WebView web;
     private SharedPreferences prefs;
     private SyncEngine engine;
+    private AuthEngine auth;
+    private android.content.SharedPreferences authPrefs;
     private String pickerId="", candidateToken="", candidateRaw="", candidateName="";
     private Uri candidateUri;
     private int candidateFlags;
     private byte[] exportBytes;
     private ValueCallback<Uri[]> uploadCallback;
+    private long backgroundAt=0;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
         getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         prefs=getSharedPreferences("drive",MODE_PRIVATE);
-        try {engine=new SyncEngine(new AppStorage());} catch(Exception e) {new AlertDialog.Builder(this).setTitle("Data HP perlu diperiksa").setMessage("Salinan lokal tidak dapat dibaca. Data tidak dihapus. "+e.getMessage()).setPositiveButton("Tutup",(d,w)->finish()).show();return;}
+        authPrefs=getSharedPreferences("auth",MODE_PRIVATE);
+        auth=new AuthEngine(new AuthEngine.Store(){
+            public String getString(String k,String d){return authPrefs.getString(k,d);}
+            public int getInt(String k,int d){return authPrefs.getInt(k,d);}
+            public long getLong(String k,long d){return authPrefs.getLong(k,d);}
+            public void putString(String k,String v)throws Exception{if(!authPrefs.edit().putString(k,v).commit())throw new Exception("Pengaturan PIN belum tersimpan di HP.");}
+            public void putInt(String k,int v)throws Exception{if(!authPrefs.edit().putInt(k,v).commit())throw new Exception("Pengaturan keamanan belum tersimpan di HP.");}
+            public void putLong(String k,long v)throws Exception{if(!authPrefs.edit().putLong(k,v).commit())throw new Exception("Pengaturan keamanan belum tersimpan di HP.");}
+            public void putCredentials(String salt,String hash)throws Exception{if(!authPrefs.edit().putString("pinSalt",salt).putString("pinHash",hash).putInt("pinFailures",0).putLong("pinLockUntil",0).commit())throw new Exception("PIN belum tersimpan di HP. Coba lagi.");}
+            public void remove(String k)throws Exception{if(!authPrefs.edit().remove(k).commit())throw new Exception("Pengaturan keamanan belum diperbarui.");}
+        });
+        getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE);
         web=new WebView(this);setContentView(web);
         web.setOnApplyWindowInsetsListener((view,insets)->{view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets.consumeSystemWindowInsets();});
         WebSettings s=web.getSettings();s.setJavaScriptEnabled(true);s.setDomStorageEnabled(false);s.setAllowFileAccess(false);s.setAllowContentAccess(true);
@@ -100,8 +115,14 @@ public final class MainActivity extends Activity {
             String id="";
             try{
                 JSONObject request=new JSONObject(envelope);id=request.getString("id");String operation=request.getString("operation");JSONObject payload=request.optJSONObject("payload");if(payload==null)payload=new JSONObject();
+                if("authStatus".equals(operation)){reply(id,authStatus(),null);return;}
+                if("setupAuth".equals(operation)){auth.setInitialPin(payload.optString("pin",null));reply(id,authStatus(),null);return;}
+                if("loginAuth".equals(operation)){auth.login(payload.optString("pin",null));reply(id,authStatus(),null);return;}
+                if("changeAuth".equals(operation)){auth.changePin(payload.optString("oldPin",null),payload.optString("newPin",null));reply(id,new JSONObject().put("ok",true),null);return;}
+                if("logoutAuth".equals(operation)){auth.lock();reply(id,authStatus(),null);return;}
+                if(!auth.unlocked())throw new Exception("Sesi terkunci. Masukkan PIN untuk membuka Buku Pupuk.");
                 switch(operation){
-                    case "load":reply(id,engine.status(),null);break;
+                    case "load":if(engine==null)engine=new SyncEngine(new AppStorage());reply(id,engine.status(),null);break;
                     case "commit":reply(id,engine.commit(payload.getJSONObject("snapshot"),payload.getLong("revision")),null);break;
                     case "sync":reply(id,engine.sync(),null);break;
                     case "previewDrive":
@@ -121,6 +142,10 @@ public final class MainActivity extends Activity {
                 }
             }catch(Exception e){reply(id,null,e.getMessage());}
         });}
+    }
+    private JSONObject authStatus()throws Exception{
+        return new JSONObject().put("configured",auth.configured()).put("unlocked",auth.unlocked())
+            .put("lockRemainingSeconds",auth.lockRemainingSeconds());
     }
     private void reply(String id,JSONObject result,String error){
         if(web==null)return;
@@ -207,7 +232,8 @@ public final class MainActivity extends Activity {
         public boolean online(){return MainActivity.this.online();}
         public String fileName(){return prefs.getString("filename","");}
     }
-    @Override protected void onResume(){super.onResume();if(web!=null)web.postDelayed(()->web.evaluateJavascript("window.dispatchEvent(new Event('buku-native-resume'))",null),700);}
+    @Override protected void onPause(){if(pickerId.isEmpty())backgroundAt=SystemClock.elapsedRealtime();super.onPause();}
+    @Override protected void onResume(){super.onResume();boolean timedOut=auth!=null&&auth.unlocked()&&backgroundAt>0&&pickerId.isEmpty()&&SystemClock.elapsedRealtime()-backgroundAt>15*60*1000L;if(timedOut)auth.lock();backgroundAt=0;if(web!=null){String event=(timedOut?"window.dispatchEvent(new Event('buku-auth-locked'));":"")+"window.dispatchEvent(new Event('buku-native-resume'))";web.postDelayed(()->web.evaluateJavascript(event,null),700);}}
     @Override public void onBackPressed(){if(web!=null)web.evaluateJavascript("window.BukuBack ? window.BukuBack() : false",value->{if(!"true".equals(value))new AlertDialog.Builder(this).setMessage("Tutup Buku Pupuk?").setPositiveButton("Tutup",(d,w)->finish()).setNegativeButton("Batal",null).show();});else super.onBackPressed();}
-    @Override protected void onDestroy(){if(uploadCallback!=null)uploadCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("BukuNative");web.destroy();web=null;}worker.shutdown();super.onDestroy();}
+    @Override protected void onDestroy(){if(auth!=null)auth.lock();if(uploadCallback!=null)uploadCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("BukuNative");web.destroy();web=null;}worker.shutdown();super.onDestroy();}
 }
