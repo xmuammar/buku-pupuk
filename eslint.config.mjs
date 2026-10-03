@@ -12,7 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "android/build/**",
+    "android/native/assets/**",
   ]),
+  {
+    files: ["android/web/receipt.tsx"],
+    rules: {"@next/next/no-img-element": "off"}, // Android receipts use bundled UI without a Next image server.
+  },
   {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],
     rules: {
