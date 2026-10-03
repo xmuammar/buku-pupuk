@@ -56,6 +56,7 @@ public final class MainActivity extends Activity {
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
+        getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
         prefs=getSharedPreferences("drive",MODE_PRIVATE);
         try {engine=new SyncEngine(new AppStorage());} catch(Exception e) {new AlertDialog.Builder(this).setTitle("Data HP perlu diperiksa").setMessage("Salinan lokal tidak dapat dibaca. Data tidak dihapus. "+e.getMessage()).setPositiveButton("Tutup",(d,w)->finish()).show();return;}
         web=new WebView(this);setContentView(web);

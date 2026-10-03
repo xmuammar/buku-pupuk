@@ -47,7 +47,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.0.0.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.1.0.apk`.
 
 ## Pengujian
 
@@ -62,3 +62,15 @@ Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menanda
 Pada build pertama, pengujian logika, integrasi DOM antarmuka, TypeScript, build native, tanda tangan, isi file migrasi di Drive, serta laporan PDF / Excel sudah lulus. Browser headless pada lingkungan build gagal diluncurkan, sehingga uji tampilan interaktif belum selesai di sana. Koneksi penyedia Google Drive dan pemasangan APK harus diperiksa pertama kali di HP pemilik data setelah memilih file.
 
 Dokumentasi platform: [Storage Access Framework](https://developer.android.com/training/data-storage/shared/documents-files) dan [konten lokal WebView](https://developer.android.com/develop/ui/views/layout/webapps/load-local-content).
+
+## Antarmuka Android 1.1.0
+
+Navigasi tetap di bawah: Ringkasan, Pembelian, Penjualan, Anggota, dan Lainnya. Menu Lainnya membuka panel dengan ikon untuk Stok pupuk, Simulasi, Buku kas, Laporan, dan Cadangan. Panel mendukung tombol kembali Android, Escape, dan fokus keyboard.
+
+Header Buku Pupuk Android, nama file utama, status, File Drive, Kirim ke Drive, Muat dari Drive, dan Buka folder Drive hanya ditampilkan di Cadangan. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat JSON / Excel / PDF dan pemulihan. Saat penulisan masih tertunda, pesan simpan transaksi mengarahkan pengguna ke Cadangan.
+
+Kartu ringkasan hanya tampil pada Ringkasan agar halaman lain lebih ringkas. Daftar transaksi menjadi kartu pada HP; formulir, ukuran sentuh, ruang navigasi bawah, status bar dan navigation bar memakai tampilan mobile. Perubahan UI diterapkan oleh adapter Android, tanpa mengubah antarmuka website.
+
+APK versionCode 2 menggunakan sertifikat yang sama dengan 1.0.0. Pasang sebagai pembaruan tanpa menghapus aplikasi lama agar jurnal lokal dan izin file Drive tetap tersimpan.
+
+Validasi 1.1.0: TypeScript, lint, pengujian finansial, integrasi DOM navigasi dan seluruh ekspor, kompilasi native serta sertifikat pembaruan diperiksa. Browser headless tidak dapat merender antarmuka penuh pada lingkungan build ini (proses berhenti SIGSEGV); responsivitas visual dan integrasi Drive pada perangkat nyata masih perlu diperiksa di HP. Harness browser tetap tersedia untuk lingkungan yang mendukung Chromium.
