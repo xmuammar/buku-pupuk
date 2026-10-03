@@ -47,7 +47,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.1.0.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.2.0.apk`.
 
 ## Pengujian
 
@@ -74,3 +74,15 @@ Kartu ringkasan hanya tampil pada Ringkasan agar halaman lain lebih ringkas. Daf
 APK versionCode 2 menggunakan sertifikat yang sama dengan 1.0.0. Pasang sebagai pembaruan tanpa menghapus aplikasi lama agar jurnal lokal dan izin file Drive tetap tersimpan.
 
 Validasi 1.1.0: TypeScript, lint, pengujian finansial, integrasi DOM navigasi dan seluruh ekspor, kompilasi native serta sertifikat pembaruan diperiksa. Browser headless tidak dapat merender antarmuka penuh pada lingkungan build ini (proses berhenti SIGSEGV); responsivitas visual dan integrasi Drive pada perangkat nyata masih perlu diperiksa di HP. Harness browser tetap tersedia untuk lingkungan yang mendukung Chromium.
+
+## Keuangan — Android 1.2.0
+
+Lainnya → Keuangan mengatur pembagian laba. Default ketua/pengelola 15%, bendahara 10%, seluruh pengawas 5%, dan sisa 70% tambahan modal. Persentase dapat diubah hingga dua desimal; jumlah honor maksimal 100%. Pengawas memakai satu alokasi kelompok, bukan persentase untuk setiap orang. Jumlah pengawas dapat ditentukan. Pembulatan dialihkan ke modal, sehingga total rupiah selalu sesuai laba. Jika laba nol atau negatif, alokasi nol.
+
+Sumber laba bisa dari transaksi atau laba manual/rencana. Laba transaksi dihitung sebagai penjualan periode dikurangi HPP terjual FIFO dan seluruh biaya operasional periode. Riwayat stok sebelum periode diproses untuk mengetahui harga pokok; pembelian pada hari sama diproses sebelum penjualan, dan lot pada hari sama diurutkan dengan ID. Penarikan bank, pembayaran distributor, dan pelunasan piutang bukan laba baru. Stok yang belum terjual masih berupa modal tertanam. Piutang termasuk penjualan; laba ini belum mencakup pajak/biaya yang belum dicatat. Riwayat penjualan yang mendahului stok akan menonaktifkan dasar laba otomatis.
+
+Ini rencana pembagian; penyimpanan tidak membuat transaksi atau pembayaran honor. Pembayaran nyata tetap dicatat sekali lewat Biaya operasional. Hindari membagi laba yang belum diterima tunai.
+
+Pengaturan disimpan sebagai properti `finance` di snapshot Drive dan cadangan JSON, dengan revision guard dan penolakan pemulihan apabila rencana berbeda. JSON lama tetap dapat dibaca. Gunakan APK terbaru sebagai satu perangkat aktif; APK lama tidak mengenali pengaturan Keuangan baru.
+
+Pengujian `android/tests/finance.test.ts` mencakup alokasi Rp1 juta, pembulatan, banyak pengawas, laba negatif, persentase/tanggal tidak valid, FIFO per produk, periode, saldo kas berbeda dari laba, backup dan konflik rencana. Harness DOM memeriksa menu, format uang, penyimpanan/pembukaan ulang, dan finance dalam cadangan lengkap.

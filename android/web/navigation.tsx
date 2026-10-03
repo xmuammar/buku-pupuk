@@ -1,8 +1,8 @@
 import {useEffect,useRef,useState} from 'react';
-import {Home,ShoppingBag,ShoppingBasket,Users,Grid2X2,Package,Calculator,Wallet,FileText,Cloud,BookOpen,X,ChevronRight} from 'lucide-react';
+import {Home,ShoppingBag,ShoppingBasket,Users,Grid2X2,Package,Calculator,Wallet,FileText,Cloud,Banknote,BookOpen,X,ChevronRight} from 'lucide-react';
 declare global {interface Window{BukuMenu?:string}}
 const primary=[{name:'Ringkasan',Icon:Home},{name:'Pembelian',Icon:ShoppingBag},{name:'Penjualan',Icon:ShoppingBasket},{name:'Anggota',Icon:Users}];
-const extra=[{name:'Stok pupuk',description:'Persediaan Urea & Phoska',Icon:Package},{name:'Simulasi',description:'Rencana penjualan dari data aktual',Icon:Calculator},{name:'Buku kas',description:'Seluruh uang masuk dan keluar',Icon:Wallet},{name:'Laporan',description:'Ringkasan PDF dan Excel',Icon:FileText},{name:'Cadangan',description:'Google Drive & pemulihan data',Icon:Cloud}];
+const extra=[{name:'Keuangan',description:'Honor pengurus & modal berikutnya',Icon:Banknote},{name:'Stok pupuk',description:'Persediaan Urea & Phoska',Icon:Package},{name:'Simulasi',description:'Rencana penjualan dari data aktual',Icon:Calculator},{name:'Buku kas',description:'Seluruh uang masuk dan keluar',Icon:Wallet},{name:'Laporan',description:'Ringkasan PDF dan Excel',Icon:FileText},{name:'Cadangan',description:'Google Drive & pemulihan data',Icon:Cloud}];
 export function MobileHeader({tab}:{tab:string}){return <div className="mobile-appbar"><div className="mobile-brand"><span className="mobile-brand-icon"><BookOpen size={22}/></span><div><strong>Buku Pupuk</strong><small>BUMDes Desa Kabat</small></div></div><span className="mobile-section">{tab}</span></div>;}
 export function BottomNavigation({tab,onSelect}:{tab:string;onSelect:(tab:string)=>void}){
  const [open,setOpen]=useState(false);const more=useRef<HTMLButtonElement>(null),sheet=useRef<HTMLElement>(null);

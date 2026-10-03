@@ -1,8 +1,9 @@
+import {validFinance,readFinance,canonicalFinance,type SavedFinance,type FinanceInput} from './finance-data';
 import {reportData, type RecordRow} from '../../lib/report-data';
 import {validMember, type Member} from '../../lib/member-data';
 import {canonicalInputs, normalizeSavedSimulation, validSimulationInput, type SavedSimulation, type SimulationInput} from '../../lib/simulation';
 
-export type Snapshot = {app: 'buku-pupuk'; version: 1; createdAt: string; recordCount: number; records: RecordRow[]; members: Member[]; simulation: SavedSimulation | null};
+export type Snapshot = {app: 'buku-pupuk'; version: 1; createdAt: string; recordCount: number; records: RecordRow[]; members: Member[]; simulation: SavedSimulation | null; finance?: SavedFinance | null};
 export type ApiResult = {status: number; body: unknown; changed?: boolean};
 type RecordForm = Partial<RecordRow> & {unitPrice?:number;receiptName?:string;receiptData?:string;saleKind?:string;memberId?:string};
 type Input = RecordForm & Partial<Member> & {original?:RecordForm;inputs?:SimulationInput;updatedAt?:string|null};
@@ -11,7 +12,7 @@ const recordFields = ['id', 'type', 'date', 'name', 'product', 'qty', 'sacks', '
 const defaultField = (key: string) => ['sacks','unit_price'].includes(key) ? 0 : '';
 const stamp = () => new Date().toISOString();
 const fail = (message: string, status = 400): never => {throw Object.assign(new Error(message), {status});};
-export const blankSnapshot = (): Snapshot => ({app:'buku-pupuk',version:1,createdAt:stamp(),recordCount:0,records:[],members:[],simulation:null});
+export const blankSnapshot = (): Snapshot => ({app:'buku-pupuk',version:1,createdAt:stamp(),recordCount:0,records:[],members:[],simulation:null,finance:null});
 const cleanRecord = (r: Partial<RecordRow>) => Object.fromEntries(recordFields.map(key => [key, r[key] ?? defaultField(key)])) as RecordRow;
 const identicalRecord = (a: Partial<RecordRow>, b: Partial<RecordRow>) => recordFields.every(key => (a[key] ?? defaultField(key)) === (b[key] ?? defaultField(key)));
 function validDate(value: unknown) {return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value+'T00:00:00Z').toISOString().slice(0,10) === value;}
@@ -52,7 +53,7 @@ export function readSnapshot(value: unknown): Snapshot {
   validateMembers(members); validateRecords(rows,members);
   const simulation = data.simulation == null ? null : normalizeSavedSimulation(data.simulation);
   if (data.simulation != null && !simulation) fail('Pengaturan simulasi tidak dapat dibaca.');
-  return {app:'buku-pupuk',version:1,createdAt:typeof data.createdAt==='string'?data.createdAt:stamp(),recordCount:rows.length,records:rows,members,simulation};
+  return {app:'buku-pupuk',version:1,createdAt:typeof data.createdAt==='string'?data.createdAt:stamp(),recordCount:rows.length,records:rows,members,simulation,finance:readFinance(data.finance)};
 }
 function formRecord(data: RecordForm, state: Snapshot, id: string): RecordRow {
   const result = cleanRecord({...data,id,sacks:data.sacks??0,unit_price:data.unitPrice??0,receipt_name:data.receiptName??'',receipt_data:data.receiptData??'',sale_kind:data.type==='sale'?data.saleKind:'',member_id:data.type==='sale'&&data.saleKind==='subsidi'?data.memberId:''});
@@ -74,6 +75,7 @@ export function applyRequest(state: Snapshot, path: string, method: string, inpu
     if (method === 'GET') {
       if (path === '/api/records') return {status:200,body:[...state.records].reverse().sort((a,b)=>b.date.localeCompare(a.date))};
       if (path === '/api/members') return {status:200,body:[...state.members].sort((a,b)=>a.name.localeCompare(b.name,'id'))};
+      if (path === '/api/finance') return {status:200,body:{plan:state.finance||null}};
       if (path === '/api/simulation') return {status:200,body:{plan:state.simulation,migrated:false}};
       if (path === '/api/backup') return {status:200,body:{...state,createdAt:stamp(),recordCount:state.records.length}};
     }
@@ -104,6 +106,13 @@ export function applyRequest(state: Snapshot, path: string, method: string, inpu
       } else next.push(member);
       validateMembers(next); state.members=next;return {status:200,body:{ok:true,id},changed:true};
     }
+    if (path === '/api/finance' && method === 'PUT') {
+      const plan=inputValue as {inputs?:FinanceInput;updatedAt?:string|null};
+      if(!validFinance(plan.inputs))fail('Periksa laba, persentase (total honor maksimal 100%), tanggal, dan jumlah pengawas.');
+      if(plan.updatedAt!==(state.finance?.updatedAt||null))fail('Rencana keuangan berubah. Buka ulang menu Keuangan sebelum menyimpan.',409);
+      state.finance={inputs:{...plan.inputs!},updatedAt:new Date(Math.max(Date.now(),state.finance?Date.parse(state.finance.updatedAt)+1:0)).toISOString()};
+      return {status:200,body:{ok:true,updatedAt:state.finance.updatedAt},changed:true};
+    }
     if (path === '/api/simulation' && method === 'PUT') {
       if (!validSimulationInput(input?.inputs)) fail('Periksa jumlah sak dan harga simulasi.');
       if (input.updatedAt !== (state.simulation?.updatedAt || null)) fail('Simulasi berubah. Muat ulang versi tersimpan.',409);
@@ -115,11 +124,13 @@ export function applyRequest(state: Snapshot, path: string, method: string, inpu
       for(const r of backup.records)if(recordMap.has(r.id)&&!identicalRecord(recordMap.get(r.id)!,r))fail('ID transaksi sama dengan isi berbeda. Data tidak ditimpa.',409);
       for(const m of backup.members)if(memberMap.has(m.id)&&!(['name','nik','farmer_group','address','updated_at'] as const).every(key=>memberMap.get(m.id)![key]===m[key]))fail('ID anggota sama dengan isi berbeda. Data tidak ditimpa.',409);
       if(backup.simulation&&state.simulation&&canonicalInputs(backup.simulation.inputs)!==canonicalInputs(state.simulation.inputs))fail('Simulasi cadangan berbeda. Rencana tidak ditimpa.',409);
+      if(backup.finance&&state.finance&&canonicalFinance(backup.finance.inputs)!==canonicalFinance(state.finance.inputs))fail('Rencana keuangan cadangan berbeda. Data tidak ditimpa.',409);
       const records=[...state.records,...backup.records.filter(r=>!recordMap.has(r.id))],members=[...state.members,...backup.members.filter(m=>!memberMap.has(m.id))];
       validateMembers(members);validateRecords(records,members);
       const added=records.length-state.records.length,membersAdded=members.length-state.members.length,simulationAdded=backup.simulation&&!state.simulation?1:0;
-      state.records=records;state.recordCount=records.length;state.members=members;if(simulationAdded)state.simulation=backup.simulation;
-      return {status:200,body:{ok:true,added,skipped:backup.records.length-added,membersAdded,simulationAdded},changed:true};
+      const financeAdded=backup.finance&&!state.finance?1:0;
+      state.records=records;state.recordCount=records.length;state.members=members;if(financeAdded)state.finance=backup.finance;if(simulationAdded)state.simulation=backup.simulation;
+      return {status:200,body:{ok:true,added,skipped:backup.records.length-added,membersAdded,simulationAdded,financeAdded},changed:true};
     }
     return {status:404,body:{error:'Operasi tidak tersedia.'}};
   } catch(error) {return {status:(error as Error & {status?:number}).status||400,body:{error:(error as Error).message||'Data belum dapat diproses.'}};}
