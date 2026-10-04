@@ -114,7 +114,6 @@ public final class MainActivity extends Activity {
                     case "sync":reply(id,engine.sync(),null);break;
                     case "refresh":reply(id,engine.refresh(),null);break;
                     case "saveExport":startExport(id,payload);break;
-                    case "driveFolder":final String rid=id;runOnUiThread(()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://drive.google.com/drive/folders/1M3aYNQZhcHUwjsnv4CODV00DbgRuzIbp")));reply(rid,new JSONObject(),null);}catch(Exception e){reply(rid,null,e.getMessage());}});break;
                     default:throw new Exception("Operasi tidak dikenal.");
                 }
             }catch(Exception e){reply(id,null,e.getMessage());}

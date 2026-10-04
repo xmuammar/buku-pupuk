@@ -47,7 +47,7 @@ public final class SyncEngine {
     }
     public synchronized boolean pending() {return journal.optBoolean("pending");}
     public synchronized void acceptCloud(String raw) throws Exception {
-        if (pending()) throw new Exception("Ada data HP yang belum tersimpan online. Simpan sekarang atau ekspor cadangan dahulu.");
+        if (pending()) throw new Exception("Ada data HP yang belum tersimpan online. Ekspor cadangan dahulu jika diperlukan.");
         JSONObject doc=new JSONObject(raw);validateDocument(doc);
         JSONObject next=new JSONObject().put("snapshot",doc).put("revision",journal.optLong("revision")+1).put("pending",false)
             .put("cloudHash",hash(raw)).put("lastSavedAt",Instant.now().toString()).put("error","");
@@ -77,7 +77,7 @@ public final class SyncEngine {
             String payload=desired.toString(),currentHash=hash(current),desiredHash=hash(payload);
             // Recover a crash after a successful cloud write but before the local acknowledgement.
             if(!currentHash.equals(desiredHash)) {
-                if(!currentHash.equals(journal.optString("cloudHash")))throw new Exception("Data berubah di HP lain. Muat data terbaru lalu ulangi perubahan jika perlu.");
+                if(!currentHash.equals(journal.optString("cloudHash")))throw new Exception("Data berubah di HP lain. Buka ulang data lalu ulangi perubahan jika perlu.");
                 storage.writeCloud(payload);
                 String check=storage.readCloud();
                 if(!hash(check).equals(desiredHash))throw new Exception("Data online belum cocok setelah disimpan. Salinan HP tetap tersedia.");

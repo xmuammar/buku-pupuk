@@ -8,10 +8,10 @@ await cp(path.join(root,'android/firebase/google-services.json'),path.join(out,'
 const receipt=path.join(root,'android/web/receipt.tsx'),native=path.join(root,'android/web/native.ts');
 const copyright=path.join(root,'android/web/copyright.tsx');
 const finance=path.join(root,'android/web/finance.tsx');
-const navigation=path.join(root,'android/web/navigation.tsx'),drivePanel=path.join(root,'android/web/drive-panel.tsx');
+const navigation=path.join(root,'android/web/navigation.tsx');
 function replaceOnce(source,anchor,replacement){if(!source.includes(anchor))throw Error('Mobile adapter anchor changed: '+anchor.slice(0,80));return source.replace(anchor,replacement);}
 const adapt={name:'android-app-adapter',setup(builder){
- builder.onLoad({filter:/\/app\/page\.tsx$/},async args=>{let source=await readFile(args.path,'utf8');source=`import Receipt from ${JSON.stringify(receipt)};\nimport {saveDrive,currentStatus} from ${JSON.stringify(native)};\nimport {MobileHeader,BottomNavigation} from ${JSON.stringify(navigation)};\nimport DrivePanel from ${JSON.stringify(drivePanel)};\nimport Finance from ${JSON.stringify(finance)};\nimport AppCopyright from ${JSON.stringify(copyright)};\n`+source;
+ builder.onLoad({filter:/\/app\/page\.tsx$/},async args=>{let source=await readFile(args.path,'utf8');source=`import Receipt from ${JSON.stringify(receipt)};\nimport {saveDrive,currentStatus} from ${JSON.stringify(native)};\nimport {MobileHeader,BottomNavigation} from ${JSON.stringify(navigation)};\nimport Finance from ${JSON.stringify(finance)};\nimport AppCopyright from ${JSON.stringify(copyright)};\n`+source;
   const start=source.indexOf('function exportCsv()'),end=source.indexOf('\nconst visible=',start);if(start<0||end<0)throw Error('CSV adapter anchor changed');
   const old=source.slice(start,end),csv=old.slice(old.indexOf("const cols="),old.indexOf('const url='));
   source=source.slice(0,start)+`async function exportCsv(){try{${csv}await saveDrive(csv,'text/csv','catatan-pupuk-'+new Date().toISOString().replace(/[:.]/g,'-')+'.csv');setNotice('CSV ditulis ke file Drive. Periksa status unggahan di aplikasi Drive.');}catch(e){setError((e as Error).message);}}`+source.slice(end);
@@ -23,11 +23,11 @@ const adapt={name:'android-app-adapter',setup(builder){
   source=source.slice(0,headerStart)+'<MobileHeader tab={tab}/>'+source.slice(headerEnd+9);
   source=replaceOnce(source,"{tab!=='Simulasi'&&<div className=\"cards\">","{tab==='Ringkasan'&&<div className=\"cards\">");
   source=replaceOnce(source,"{tab!=='Simulasi'&&<button className=\"primary\"", "{['Ringkasan','Pembelian','Penjualan','Anggota'].includes(tab)&&<button className=\"primary\"");
-  source=replaceOnce(source,"tab==='Laporan & cadangan'?<Reports rows={rows}","['Laporan','Cadangan'].includes(tab)?<>{tab==='Cadangan'&&<DrivePanel/>}<Reports section={tab==='Cadangan'?'backup':'reports'} rows={rows}");
+  source=replaceOnce(source,"tab==='Laporan & cadangan'?<Reports rows={rows}","['Laporan','Cadangan'].includes(tab)?<><Reports section={tab==='Cadangan'?'backup':'reports'} rows={rows}");
   source=replaceOnce(source,"window.dispatchEvent(new Event('buku-pupuk-restored'));}}/>:","window.dispatchEvent(new Event('buku-pupuk-restored'));}}/>{tab==='Laporan'&&<button className=\"mobile-csv\" onClick={exportCsv} disabled={!rows.length}><Download size={18}/>Simpan CSV ke Drive</button>}</>:");
   source=replaceOnce(source,"[tab,setTab]=useState('Ringkasan')","[tab,setTab]=useState(window.BukuMenu||'Ringkasan')");
   source=replaceOnce(source,'</main>{modal&&','</main><BottomNavigation tab={tab} onSelect={value=>{window.BukuMenu=value;setTab(value);}}/>{modal&&');
-  source=source.replace("setNotice(editing?'Transaksi berhasil diperbarui. Stok, kas dan laporan dihitung ulang.':'Catatan berhasil disimpan.');","setNotice((editing?'Transaksi diperbarui.':'Catatan disimpan.')+(currentStatus()?.pending?' Tersimpan di HP. Buka Cadangan untuk melihat status Firebase.':''));");
+  source=source.replace("setNotice(editing?'Transaksi berhasil diperbarui. Stok, kas dan laporan dihitung ulang.':'Catatan berhasil disimpan.');","setNotice(editing?'Transaksi diperbarui.':'Catatan disimpan.');");
   source=replaceOnce(source,'<div className="table-wrap"><table>','<div className="table-wrap mobile-transactions"><table>');
   source=replaceOnce(source,'<td>{r.qty?', '<td data-label="Jumlah">{r.qty?');
   source=replaceOnce(source,'<td className="money">','<td className="money" data-label="Nilai transaksi">');

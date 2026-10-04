@@ -7,7 +7,7 @@ Aplikasi Android pribadi untuk BUMDes. Menu transaksi, anggota, simulasi dari st
 1. Pasang APK Buku Pupuk. Android minimum 8.0.
 2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri. Setelah akun dibuat, aplikasi langsung masuk tanpa verifikasi email.
 3. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
-4. Di HP lain, pasang APK versi 1.4.3, lalu masuk dengan alamat dan kata sandi yang sama.
+4. Di HP lain, pasang APK versi 1.4.4, lalu masuk dengan alamat dan kata sandi yang sama.
 
 Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu Laporan / Cadangan. Jangan menghapus cadangan lama sebelum memeriksa file baru.
 
@@ -46,7 +46,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.3.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.4.apk`.
 
 ## Pengujian
 
@@ -66,7 +66,7 @@ Dokumentasi platform: [Storage Access Framework](https://developer.android.com/t
 
 Navigasi tetap di bawah: Ringkasan, Pembelian, Penjualan, Anggota, dan Lainnya. Menu Lainnya membuka panel dengan ikon untuk Stok pupuk, Simulasi, Buku kas, Laporan, dan Cadangan. Panel mendukung tombol kembali Android, Escape, dan fokus keyboard.
 
-Header Buku Pupuk Android, status data online, tombol Simpan sekarang, Muat data terbaru, dan folder cadangan Drive hanya ditampilkan di Cadangan. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat arsip JSON / Excel / PDF. Menu pemulihan JSON dihapus.
+Panel kontrol data di menu Cadangan dihapus. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat arsip JSON / Excel / PDF. Menu pemulihan JSON tetap dihapus.
 
 Kartu ringkasan hanya tampil pada Ringkasan agar halaman lain lebih ringkas. Daftar transaksi menjadi kartu pada HP; formulir, ukuran sentuh, ruang navigasi bawah, status bar dan navigation bar memakai tampilan mobile. Perubahan UI diterapkan oleh adapter Android, tanpa mengubah antarmuka website.
 
@@ -101,8 +101,6 @@ Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pendaftaran langsung m
 
 Menu database berbasis file JSON dihapus dari sistem Android. Aplikasi tidak lagi menampilkan atau memanggil alur pilih file JSON untuk memuat ulang database. Database utama memakai Firebase Realtime Database setelah login. Menu Cadangan hanya membuat arsip tambahan JSON, Excel, dan PDF ke Google Drive; arsip JSON tidak digunakan untuk reload database dari menu aplikasi.
 
-Panel Cadangan menampilkan status data online, tombol Simpan sekarang, Muat data terbaru, dan Buka folder cadangan Drive.
+## Tampilan Cadangan — Android 1.4.4
 
-## Tampilan Cadangan — Android 1.4.3
-
-Bahasa teknis tentang database dihapus dari tampilan aplikasi. Karena aplikasi memakai satu penyimpanan online, menu Cadangan sekarang memakai bahasa sederhana: Data online aktif, Simpan sekarang, Muat data terbaru, dan Perubahan tersimpan di HP. Notifikasi teknis diganti agar pengguna tidak bingung.
+Panel kontrol data dihapus dari menu Cadangan karena aplikasi sudah memakai satu penyimpanan online. Tidak ada lagi tombol Simpan sekarang, Muat data terbaru, Buka folder cadangan Drive, atau status/notifikasi data di layar Cadangan.
