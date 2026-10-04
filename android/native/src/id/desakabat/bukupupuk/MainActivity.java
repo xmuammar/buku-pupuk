@@ -3,7 +3,6 @@ package id.desakabat.bukupupuk;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
@@ -12,7 +11,6 @@ import android.net.NetworkCapabilities;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.provider.DocumentsContract;
 import android.provider.OpenableColumns;
 import android.util.AtomicFile;
 import android.util.Base64;
@@ -35,7 +33,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.json.JSONObject;
@@ -43,18 +40,15 @@ import org.json.JSONObject;
 /** Only bundled app content can call the bridge. All private data stays out of APK/source. */
 public final class MainActivity extends Activity {
     private static final String ORIGIN="https://appassets.androidplatform.net";
-    private static final int PICK_DATABASE=11, CREATE_DATABASE=12, SAVE_EXPORT=13, PICK_UPLOAD=14;
+    private static final int SAVE_EXPORT=13, PICK_UPLOAD=14;
     private static final int MAX_BYTES=64*1024*1024;
     private final ExecutorService worker=Executors.newSingleThreadExecutor();
     private WebView web;
-    private SharedPreferences prefs;
     private SyncEngine engine;
     private FirebaseAuth auth;
     private FirebaseDatabase cloudDatabase;
     private android.content.SharedPreferences authPrefs;
-    private String pickerId="", candidateToken="", candidateRaw="", candidateName="";
-    private Uri candidateUri;
-    private int candidateFlags;
+    private String pickerId="";
     private byte[] exportBytes;
     private ValueCallback<Uri[]> uploadCallback;
     private long backgroundAt=0;
@@ -62,7 +56,6 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
         getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR);
-        prefs=getSharedPreferences("drive",MODE_PRIVATE);
         authPrefs=getSharedPreferences("auth",MODE_PRIVATE);
         try{auth=new FirebaseAuth(this,authPrefs);cloudDatabase=new FirebaseDatabase(auth);}
         catch(Exception e){throw new IllegalStateException("Konfigurasi Firebase Buku Pupuk tidak dapat dibaca.",e);}
@@ -120,17 +113,6 @@ public final class MainActivity extends Activity {
                     case "commit":reply(id,engine.commit(payload.getJSONObject("snapshot"),payload.getLong("revision")),null);break;
                     case "sync":reply(id,engine.sync(),null);break;
                     case "refresh":reply(id,engine.refresh(),null);break;
-                    case "previewDrive":
-                        if(engine.pending())throw new Exception("Kirim perubahan HP terlebih dahulu.");
-                        if(!online())throw new Exception("Internet belum tersedia. Salinan HP tetap dapat dipakai.");
-                        candidateUri=Uri.parse(prefs.getString("uri",""));requireDrive(candidateUri);
-                        candidateFlags=Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION;
-                        candidateRaw=new String(readBytes(candidateUri),StandardCharsets.UTF_8);SyncEngine.validateDocument(new JSONObject(candidateRaw));
-                        candidateName=displayName(candidateUri);candidateToken=UUID.randomUUID().toString();
-                        reply(id,new JSONObject().put("token",candidateToken).put("snapshot",new JSONObject(candidateRaw)),null);break;
-                    case "openDatabase":if(engine.pending())throw new Exception("Ada data HP belum dikirim. Simpan cadangan JSON dan selesaikan pengiriman sebelum mengganti file.");startPicker(id,false,payload);break;
-                    case "createDatabase":if(engine.pending())throw new Exception("Kirim data HP yang tertunda terlebih dahulu.");startPicker(id,true,payload);break;
-                    case "acceptDatabase":acceptCandidate(id,payload.getString("token"));break;
                     case "saveExport":startExport(id,payload);break;
                     case "driveFolder":final String rid=id;runOnUiThread(()->{try{startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse("https://drive.google.com/drive/folders/1M3aYNQZhcHUwjsnv4CODV00DbgRuzIbp")));reply(rid,new JSONObject(),null);}catch(Exception e){reply(rid,null,e.getMessage());}});break;
                     default:throw new Exception("Operasi tidak dikenal.");
@@ -148,14 +130,6 @@ public final class MainActivity extends Activity {
             runOnUiThread(()->{if(web!=null)web.evaluateJavascript(js,null);});
         }catch(Exception ignored){}
     }
-    private void startPicker(String id,boolean create,JSONObject payload) throws Exception {
-        if(!pickerId.isEmpty())throw new Exception("Selesaikan pemilihan file yang sedang terbuka.");
-        pickerId=id;
-        Intent intent=new Intent(create?Intent.ACTION_CREATE_DOCUMENT:Intent.ACTION_OPEN_DOCUMENT);intent.addCategory(Intent.CATEGORY_OPENABLE);intent.setType(create?"application/json":"*/*");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-        if(create)intent.putExtra(Intent.EXTRA_TITLE,payload.optString("filename","buku-pupuk-database.json"));
-        runOnUiThread(()->{try{startActivityForResult(intent,create?CREATE_DATABASE:PICK_DATABASE);}catch(Exception e){pickerId="";reply(id,null,"Aplikasi Files / Google Drive belum tersedia.");}});
-    }
     private void startExport(String id,JSONObject payload) throws Exception {
         if(!pickerId.isEmpty())throw new Exception("Selesaikan pemilihan file terlebih dahulu.");
         byte[] bytes=Base64.decode(payload.getString("base64"),Base64.DEFAULT);if(bytes.length>MAX_BYTES)throw new Exception("File terlalu besar. Pilih periode laporan yang lebih singkat.");
@@ -166,39 +140,22 @@ public final class MainActivity extends Activity {
     @Override protected void onActivityResult(int request,int result,Intent data){
         super.onActivityResult(request,result,data);
         if(request==PICK_UPLOAD){if(uploadCallback!=null){uploadCallback.onReceiveValue(result==RESULT_OK&&data!=null&&data.getData()!=null?new Uri[]{data.getData()}:null);uploadCallback=null;}return;}
-        if(request!=PICK_DATABASE&&request!=CREATE_DATABASE&&request!=SAVE_EXPORT)return;
+        if(request!=SAVE_EXPORT)return;
         final String id=pickerId;pickerId="";
         if(result!=RESULT_OK||data==null||data.getData()==null){exportBytes=null;reply(id,null,"Pemilihan dibatalkan. File belum disimpan.");return;}
-        final Uri uri=data.getData();final int flags=data.getFlags();final byte[] bytes=exportBytes;exportBytes=null;
+        final Uri uri=data.getData();final byte[] bytes=exportBytes;exportBytes=null;
         worker.execute(()->{try{
             requireDrive(uri);
-            if(request==SAVE_EXPORT){if(bytes==null)throw new Exception("Isi file tidak tersedia. Buat laporan ulang.");writeBytes(uri,bytes);if(!java.util.Arrays.equals(readBytes(uri),bytes))throw new Exception("Isi file belum cocok setelah ditulis.");reply(id,new JSONObject().put("filename",displayName(uri)).put("providerWritten",true),null);return;}
-            requireWritable(uri);
-            if(request==CREATE_DATABASE){String current=engine.status().getJSONObject("snapshot").toString();writeBytes(uri,current.getBytes(StandardCharsets.UTF_8));}
-            String raw=new String(readBytes(uri),StandardCharsets.UTF_8);SyncEngine.validateDocument(new JSONObject(raw));
-            candidateUri=uri;candidateFlags=flags;candidateRaw=raw;candidateName=displayName(uri);candidateToken=UUID.randomUUID().toString();
-            reply(id,new JSONObject().put("token",candidateToken).put("snapshot",new JSONObject(raw)).put("fileName",candidateName),null);
+            if(bytes==null)throw new Exception("Isi file tidak tersedia. Buat laporan ulang.");
+            writeBytes(uri,bytes);
+            if(!java.util.Arrays.equals(readBytes(uri),bytes))throw new Exception("Isi file belum cocok setelah ditulis.");
+            reply(id,new JSONObject().put("filename",displayName(uri)).put("providerWritten",true),null);
         }catch(Exception e){reply(id,null,e.getMessage());}});
-    }
-    private void acceptCandidate(String id,String token) throws Exception {
-        if(candidateUri==null||!token.equals(candidateToken))throw new Exception("Pemilihan file kedaluwarsa. Pilih ulang.");
-        int flags=candidateFlags&(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-        if((flags&Intent.FLAG_GRANT_WRITE_URI_PERMISSION)==0)throw new Exception("Drive belum memberi izin menulis. Pilih file milik akun Bapak.");
-        getContentResolver().takePersistableUriPermission(candidateUri,flags);
-        engine.acceptCloud(candidateRaw);
-        if(!prefs.edit().putString("uri",candidateUri.toString()).putString("filename",candidateName).commit())throw new Exception("Sambungan Drive belum dapat disimpan di HP. Pilih file ulang.");
-        candidateUri=null;candidateToken="";candidateRaw="";
-        reply(id,engine.status(),null);
     }
     private void requireDrive(Uri uri) throws Exception {
         if(!"content".equals(uri.getScheme()))throw new Exception("Pilih Google Drive dari menu penyimpanan.");
         ProviderInfo info=getPackageManager().resolveContentProvider(uri.getAuthority(),0);
         if(info==null||!"com.google.android.apps.docs".equals(info.packageName))throw new Exception("File harus dipilih dari Google Drive. Buka menu ☰ lalu pilih Drive dan akun Bapak.");
-    }
-    private void requireWritable(Uri uri) throws Exception {
-        try(Cursor cursor=getContentResolver().query(uri,new String[]{DocumentsContract.Document.COLUMN_FLAGS},null,null,null)){
-            if(cursor!=null&&cursor.moveToFirst()&&(cursor.getInt(0)&DocumentsContract.Document.FLAG_SUPPORTS_WRITE)==0)throw new Exception("File Drive ini tidak dapat diedit. Pilih file JSON milik Bapak.");
-        }
     }
     private String displayName(Uri uri){try(Cursor c=getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME},null,null,null)){if(c!=null&&c.moveToFirst())return c.getString(0);}catch(Exception ignored){}return "File Google Drive";}
     private byte[] readBytes(Uri uri) throws Exception {

@@ -7,7 +7,7 @@ Aplikasi Android pribadi untuk BUMDes. Menu transaksi, anggota, simulasi dari st
 1. Pasang APK Buku Pupuk. Android minimum 8.0.
 2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri. Setelah akun dibuat, aplikasi langsung masuk tanpa verifikasi email.
 3. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
-4. Di HP lain, pasang APK versi 1.4.1, lalu masuk dengan alamat dan kata sandi yang sama.
+4. Di HP lain, pasang APK versi 1.4.2, lalu masuk dengan alamat dan kata sandi yang sama.
 
 Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu Laporan / Cadangan. Jangan menghapus cadangan lama sebelum memeriksa file baru.
 
@@ -25,9 +25,9 @@ Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu 
 
 PDF dan Excel mempertahankan ringkasan pada halaman / sheet pertama, rincian transaksi, stok dalam kg dan sak, harga per sak, kas, utang, piutang, dan nama bendahara. Setiap ekspor memakai tanggal serta jam dalam nama file.
 
-Di **Laporan & cadangan**, pilih JSON, Excel, atau PDF kemudian pilih Google Drive pada pemilih tujuan. Android membuat file baru dan tidak menghapus cadangan lama. Ekspor JSON mencakup seluruh database; PDF dan Excel adalah laporan dan tidak digunakan untuk memulihkan transaksi.
+Di **Laporan & cadangan**, pilih JSON, Excel, atau PDF kemudian pilih Google Drive pada pemilih tujuan. Android membuat file baru dan tidak menghapus cadangan lama. Ekspor JSON mencakup seluruh database sebagai arsip tambahan; database aplikasi tetap Firebase.
 
-Jika pemasangan diulang atau pindah HP, masuk ke akun Firebase yang sama. Untuk memulihkan JSON tambahan, gunakan **Pulihkan dari cadangan** di Google Drive. Cadangan lama tidak dihapus.
+Jika pemasangan diulang atau pindah HP, masuk ke akun Firebase yang sama. Aplikasi mengambil data dari Firebase. Menu pemulihan dari file JSON dihapus agar tidak ada lagi reload database dari arsip lama.
 
 Website lama tidak terhubung dengan database Firebase APK. Gunakan APK sebagai aplikasi utama; transaksi website tidak otomatis disalin ke database Firebase.
 
@@ -46,7 +46,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.1.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.2.apk`.
 
 ## Pengujian
 
@@ -66,7 +66,7 @@ Dokumentasi platform: [Storage Access Framework](https://developer.android.com/t
 
 Navigasi tetap di bawah: Ringkasan, Pembelian, Penjualan, Anggota, dan Lainnya. Menu Lainnya membuka panel dengan ikon untuk Stok pupuk, Simulasi, Buku kas, Laporan, dan Cadangan. Panel mendukung tombol kembali Android, Escape, dan fokus keyboard.
 
-Header Buku Pupuk Android, nama file utama, status, File Drive, Kirim ke Drive, Muat dari Drive, dan Buka folder Drive hanya ditampilkan di Cadangan. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat JSON / Excel / PDF dan pemulihan. Saat penulisan masih tertunda, pesan simpan transaksi mengarahkan pengguna ke Cadangan.
+Header Buku Pupuk Android, status Firebase, tombol sinkronkan, muat terbaru, dan folder cadangan Drive hanya ditampilkan di Cadangan. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat arsip JSON / Excel / PDF. Menu pemulihan JSON dihapus. Saat penulisan masih tertunda, pesan simpan transaksi mengarahkan pengguna ke Cadangan.
 
 Kartu ringkasan hanya tampil pada Ringkasan agar halaman lain lebih ringkas. Daftar transaksi menjadi kartu pada HP; formulir, ukuran sentuh, ruang navigasi bawah, status bar dan navigation bar memakai tampilan mobile. Perubahan UI diterapkan oleh adapter Android, tanpa mengubah antarmuka website.
 
@@ -82,7 +82,7 @@ Sumber laba bisa dari transaksi atau laba manual/rencana. Laba transaksi dihitun
 
 Ini rencana pembagian; penyimpanan tidak membuat transaksi atau pembayaran honor. Pembayaran nyata tetap dicatat sekali lewat Biaya operasional. Hindari membagi laba yang belum diterima tunai.
 
-Pengaturan disimpan sebagai properti `finance` di snapshot Drive dan cadangan JSON, dengan revision guard dan penolakan pemulihan apabila rencana berbeda. JSON lama tetap dapat dibaca. Gunakan APK terbaru sebagai satu perangkat aktif; APK lama tidak mengenali pengaturan Keuangan baru.
+Pengaturan disimpan sebagai properti `finance` di snapshot Firebase dan cadangan JSON. JSON lama tetap dapat dibaca oleh mesin data untuk kompatibilitas, tetapi menu reload/pemulihan dari file JSON tidak ditampilkan pada aplikasi terbaru. Gunakan APK terbaru; APK lama tidak mengenali pengaturan Keuangan baru.
 
 Pengujian `android/tests/finance.test.ts` mencakup alokasi Rp1 juta, pembulatan, banyak pengawas, laba negatif, persentase/tanggal tidak valid, FIFO per produk, periode, saldo kas berbeda dari laba, backup dan konflik rencana. Harness DOM memeriksa menu, format uang, penyimpanan/pembukaan ulang, dan finance dalam cadangan lengkap.
 
@@ -95,3 +95,10 @@ Tulisan “© 2026 · Hak cipta aplikasi milik Muammar, SST, M.Kom” ditampilka
 Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pendaftaran langsung membuka aplikasi tanpa mengirim atau menunggu tautan verifikasi email. Akun lama yang belum terverifikasi juga dapat masuk dengan kata sandinya. Menu login menyediakan reset kata sandi Firebase. Kata sandi tidak disimpan aplikasi. Refresh token disimpan terenkripsi oleh Android Keystore. Kunci aplikasi di Menu lainnya mengunci sesi pada HP; masuk kembali diperlukan.
 
 `google-services.json` cocok dengan project dan package ID Android `id.desakabat.bukupupuk`. Aturan database tersimpan di `android/firebase/database.rules.json`; deploy dengan `firebase deploy --only database` setelah login Firebase CLI sebagai pemilik project. Aturan hanya menerima email BUMDes yang ditentukan, tanpa syarat verifikasi, dan tidak boleh diganti menjadi akses publik.
+
+
+## Firebase penuh — Android 1.4.2
+
+Menu database berbasis file JSON dihapus dari sistem Android. Aplikasi tidak lagi menampilkan atau memanggil alur pilih file JSON untuk memuat ulang database. Database utama memakai Firebase Realtime Database setelah login. Menu Cadangan hanya membuat arsip tambahan JSON, Excel, dan PDF ke Google Drive; arsip JSON tidak digunakan untuk reload database dari menu aplikasi.
+
+Panel Cadangan menampilkan status Firebase, tombol Sinkronkan sekarang, Muat terbaru, dan Buka folder cadangan Drive. Pesan tertunda sekarang menyebut Firebase agar tidak membingungkan dengan penyimpanan Drive.

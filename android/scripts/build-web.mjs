@@ -27,7 +27,7 @@ const adapt={name:'android-app-adapter',setup(builder){
   source=replaceOnce(source,"window.dispatchEvent(new Event('buku-pupuk-restored'));}}/>:","window.dispatchEvent(new Event('buku-pupuk-restored'));}}/>{tab==='Laporan'&&<button className=\"mobile-csv\" onClick={exportCsv} disabled={!rows.length}><Download size={18}/>Simpan CSV ke Drive</button>}</>:");
   source=replaceOnce(source,"[tab,setTab]=useState('Ringkasan')","[tab,setTab]=useState(window.BukuMenu||'Ringkasan')");
   source=replaceOnce(source,'</main>{modal&&','</main><BottomNavigation tab={tab} onSelect={value=>{window.BukuMenu=value;setTab(value);}}/>{modal&&');
-  source=source.replace("setNotice(editing?'Transaksi berhasil diperbarui. Stok, kas dan laporan dihitung ulang.':'Catatan berhasil disimpan.');","setNotice((editing?'Transaksi diperbarui.':'Catatan disimpan.')+(currentStatus()?.pending?' Tersimpan di HP. Buka Cadangan untuk melihat status Drive.':''));");
+  source=source.replace("setNotice(editing?'Transaksi berhasil diperbarui. Stok, kas dan laporan dihitung ulang.':'Catatan berhasil disimpan.');","setNotice((editing?'Transaksi diperbarui.':'Catatan disimpan.')+(currentStatus()?.pending?' Tersimpan di HP. Buka Cadangan untuk melihat status Firebase.':''));");
   source=replaceOnce(source,'<div className="table-wrap"><table>','<div className="table-wrap mobile-transactions"><table>');
   source=replaceOnce(source,'<td>{r.qty?', '<td data-label="Jumlah">{r.qty?');
   source=replaceOnce(source,'<td className="money">','<td className="money" data-label="Nilai transaksi">');
@@ -45,7 +45,7 @@ const adapt={name:'android-app-adapter',setup(builder){
   source=source.replace(/setMessage\(`\$\{manual\?[^;]+;/,'setMessage(`File ${fileType===\'pdf\'?\'PDF\':\'Excel\'} ditulis ke file Drive. Periksa status unggahan di aplikasi Drive.`);');
   source=source.replace('Unduh seluruh transaksi terbaru dalam tiga format. Simpan ketiganya di tempat yang aman sebagai salinan tambahan.','Simpan seluruh data terbaru sebagai salinan tambahan di Google Drive. Nama file memuat tanggal dan jam.');
   source=source.replace('Unduh laporan PDF','Simpan PDF ke Drive').replace('Unduh Excel (.xlsx)','Simpan Excel ke Drive');
-  source=replaceOnce(source,'function Reports({rows,onRestored}:{rows:RecordRow[];onRestored:()=>Promise<void>})','function Reports({rows,onRestored,section}:{rows:RecordRow[];onRestored:()=>Promise<void>;section?:string})');
+  source=replaceOnce(source,'function Reports({rows}:{rows:RecordRow[];onRestored?:()=>Promise<void>})','function Reports({rows,section}:{rows:RecordRow[];onRestored?:()=>Promise<void>;section?:string})');
   source=replaceOnce(source,'<section className="panel"><div className="panel-heading"><div><h2>Laporan usaha','{section!=="backup"&&<section className="panel"><div className="panel-heading"><div><h2>Laporan usaha');
   source=replaceOnce(source,'</div></section>\n <section className="panel">','</div></section>}\n {section!=="reports"&&<section className="panel">');
   source=replaceOnce(source,'</div></div></section></div>;','</div></div></section>}</div>;');
@@ -57,4 +57,4 @@ await build({entryPoints:[path.join(root,'android/web/main.tsx')],bundle:true,mi
 const css=(await readFile(path.join(root,'app/globals.css'),'utf8')).replace(/^@import[^\n]+\n/,'')+'\n'+await readFile(path.join(root,'android/web/android.css'),'utf8');
 await writeFile(path.join(out,'app.css'),css);await cp(path.join(root,'public/fonts'),path.join(out,'fonts'),{recursive:true});
 await writeFile(path.join(out,'index.html'),'<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light"><title>Buku Pupuk</title><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>');
-console.log('Bundled Android UI, Firebase client config, reports, fonts, receipts, and Google Drive backup adapter.');
+console.log('Bundled Android UI, Firebase client config, reports, fonts, receipts, and backup export adapter.');

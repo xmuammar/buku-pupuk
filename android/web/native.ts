@@ -15,7 +15,6 @@ export function exclusive<T>(task:()=>Promise<T>):Promise<T>{const next=queue.th
 export async function driveAction(operation:'sync'|'refresh'){return exclusive(async()=>{
   return publish(await native<DriveStatus>(operation==='sync'||status?.pending?'sync':'refresh'));
 });}
-export async function selectDatabase(create=false){return exclusive(async()=>{const candidate=await native<{token:string;snapshot:unknown;fileName:string}>(create?'createDatabase':'openDatabase',{filename:'buku-pupuk-database.json'});readSnapshot(candidate.snapshot);return publish(await native<DriveStatus>('acceptDatabase',{token:candidate.token}));});}
 window.fetch=(async(input:RequestInfo|URL,init?:RequestInit)=>{
   const url=new URL(input instanceof Request?input.url:String(input),window.location.href);
   if(url.origin!==window.location.origin||!url.pathname.startsWith('/api/'))return originalFetch(input,init);
