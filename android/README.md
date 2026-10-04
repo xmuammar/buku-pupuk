@@ -7,7 +7,7 @@ Aplikasi Android pribadi untuk BUMDes. Menu transaksi, anggota, simulasi dari st
 1. Pasang APK Buku Pupuk. Android minimum 8.0.
 2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri. Setelah akun dibuat, aplikasi langsung masuk tanpa verifikasi email.
 3. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
-4. Di HP lain, pasang APK versi 1.4.2, lalu masuk dengan alamat dan kata sandi yang sama.
+4. Di HP lain, pasang APK versi 1.4.3, lalu masuk dengan alamat dan kata sandi yang sama.
 
 Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu Laporan / Cadangan. Jangan menghapus cadangan lama sebelum memeriksa file baru.
 
@@ -16,8 +16,8 @@ Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu 
 - Database utama memakai Firebase Authentication dan Realtime Database project `buku-pupuk-desa-kabat` di region Singapore. Paket Spark gratis dipilih. Email/sandi Firebase mengautentikasi pengguna; aturan database hanya mengizinkan akun `xmuammar@gmail.com`, tanpa mewajibkan verifikasi email. Aturan tetap menolak semua akun lainnya dan tidak membuka database untuk publik.
 - APK memakai `android/firebase/google-services.json`, yaitu konfigurasi klien Android Firebase. Ini bukan service account JSON dan tidak mengandung kunci privat server. Kata sandi tidak ditanam di APK.
 - Transaksi, anggota, pengaturan simulasi, dan kwitansi dalam bentuk data gambar/PDF termasuk dalam JSON tersebut. Foto kwitansi diperkecil; batas lampiran sekitar 1,5 MB setelah encoding dan batas database 64 MB.
-- Sebelum mengirim perubahan, aplikasi menyimpan jurnal atomik di penyimpanan privat HP. Saat internet putus, transaksi tetap tersimpan lokal dan menunggu sinkronisasi.
-- Setiap perubahan dicoba langsung ke Firebase. Saat aplikasi terbuka, aplikasi memeriksa pembaruan cloud sekitar setiap 30 detik dan ketika HP kembali online/dibuka. Perubahan di HP lain biasanya muncul setelah pemeriksaan berikutnya; sinkronisasi tidak berjalan ketika aplikasi ditutup.
+- Sebelum mengirim perubahan, aplikasi menyimpan jurnal atomik di penyimpanan privat HP. Saat internet putus, transaksi tetap tersimpan lokal dan dikirim ketika koneksi tersedia.
+- Setiap perubahan dicoba langsung ke Firebase. Saat aplikasi terbuka, aplikasi memeriksa pembaruan cloud sekitar setiap 30 detik dan ketika HP kembali online/dibuka. Perubahan di HP lain biasanya muncul setelah pemeriksaan berikutnya.
 - Firebase ETag dipakai untuk menolak penulisan bila database berubah bersamaan dari HP lain. Jika konflik muncul, muat data terbaru dan ulangi perubahan. Hindari mengedit catatan yang sama bersamaan di dua HP.
 - Token sesi disimpan terenkripsi memakai Android Keystore. Firebase Authentication dan aturan database menegakkan izin pada server.
 
@@ -46,7 +46,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.2.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.3.apk`.
 
 ## Pengujian
 
@@ -66,7 +66,7 @@ Dokumentasi platform: [Storage Access Framework](https://developer.android.com/t
 
 Navigasi tetap di bawah: Ringkasan, Pembelian, Penjualan, Anggota, dan Lainnya. Menu Lainnya membuka panel dengan ikon untuk Stok pupuk, Simulasi, Buku kas, Laporan, dan Cadangan. Panel mendukung tombol kembali Android, Escape, dan fokus keyboard.
 
-Header Buku Pupuk Android, status Firebase, tombol sinkronkan, muat terbaru, dan folder cadangan Drive hanya ditampilkan di Cadangan. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat arsip JSON / Excel / PDF. Menu pemulihan JSON dihapus. Saat penulisan masih tertunda, pesan simpan transaksi mengarahkan pengguna ke Cadangan.
+Header Buku Pupuk Android, status data online, tombol Simpan sekarang, Muat data terbaru, dan folder cadangan Drive hanya ditampilkan di Cadangan. Laporan memuat ekspor PDF / Excel / CSV; Cadangan memuat arsip JSON / Excel / PDF. Menu pemulihan JSON dihapus.
 
 Kartu ringkasan hanya tampil pada Ringkasan agar halaman lain lebih ringkas. Daftar transaksi menjadi kartu pada HP; formulir, ukuran sentuh, ruang navigasi bawah, status bar dan navigation bar memakai tampilan mobile. Perubahan UI diterapkan oleh adapter Android, tanpa mengubah antarmuka website.
 
@@ -101,4 +101,8 @@ Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pendaftaran langsung m
 
 Menu database berbasis file JSON dihapus dari sistem Android. Aplikasi tidak lagi menampilkan atau memanggil alur pilih file JSON untuk memuat ulang database. Database utama memakai Firebase Realtime Database setelah login. Menu Cadangan hanya membuat arsip tambahan JSON, Excel, dan PDF ke Google Drive; arsip JSON tidak digunakan untuk reload database dari menu aplikasi.
 
-Panel Cadangan menampilkan status Firebase, tombol Sinkronkan sekarang, Muat terbaru, dan Buka folder cadangan Drive. Pesan tertunda sekarang menyebut Firebase agar tidak membingungkan dengan penyimpanan Drive.
+Panel Cadangan menampilkan status data online, tombol Simpan sekarang, Muat data terbaru, dan Buka folder cadangan Drive.
+
+## Tampilan Cadangan — Android 1.4.3
+
+Bahasa teknis tentang database dihapus dari tampilan aplikasi. Karena aplikasi memakai satu penyimpanan online, menu Cadangan sekarang memakai bahasa sederhana: Data online aktif, Simpan sekarang, Muat data terbaru, dan Perubahan tersimpan di HP. Notifikasi teknis diganti agar pengguna tidak bingung.

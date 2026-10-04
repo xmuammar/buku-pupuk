@@ -18,7 +18,7 @@ function App(){
  },[authenticated]);
  async function act(action:string){setError('');setBusy(action);try{
   if(action==='folder')await native('driveFolder');
-  else if(action==='refresh'){if(!confirm('Muat data terbaru dari database online? Isian form yang belum disimpan akan ditutup.'))return;await driveAction('refresh');setVersion(n=>n+1);}
+  else if(action==='refresh'){if(!confirm('Muat data terbaru? Isian form yang belum disimpan akan ditutup.'))return;await driveAction('refresh');setVersion(n=>n+1);}
   else if(action==='sync')await driveAction('sync');
  }catch(e){setError((e as Error).message);}finally{setBusy('');}}
  const ready=!!state;
@@ -27,7 +27,7 @@ function App(){
  if(!authenticated)return <Login configured={authConfigured} onUnlock={unlock}/>;
  return <DriveContext.Provider value={{state,error,busy,act,dismiss:()=>setError('')}}>
  {error&&<div className="android-error firebase-global-error" role="alert">{error}<button onClick={()=>setError('')}>Tutup</button></div>}
- {ready?<Page key={version}/>:<main className="login-loading"><section className="login-loading-card" role="status"><ShieldCheck className="spinning" size={28}/><p>Menyiapkan database Buku Pupuk…</p></section><AppCopyright/></main>}
+ {ready?<Page key={version}/>:<main className="login-loading"><section className="login-loading-card" role="status"><ShieldCheck className="spinning" size={28}/><p>Menyiapkan data Buku Pupuk…</p></section><AppCopyright/></main>}
  </DriveContext.Provider>;
 }
 createRoot(document.getElementById('root')!).render(<App/>);
