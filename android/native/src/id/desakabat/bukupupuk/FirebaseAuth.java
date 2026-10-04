@@ -17,7 +17,6 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 /** Firebase email/password authentication. Refresh credentials are encrypted with Android Keystore. */
@@ -50,22 +49,13 @@ final class FirebaseAuth {
         validate(email,password);
         JSONObject account=post(AUTH+"/accounts:signUp?key="+apiKey,new JSONObject().put("email",email).put("password",password).put("returnSecureToken",true));
         save(account);
-        post(AUTH+"/accounts:sendOobCode?key="+apiKey,new JSONObject().put("requestType","VERIFY_EMAIL").put("idToken",secret("idToken")));
-        unlocked=false;return new JSONObject().put("verificationSent",true).put("email",OWNER);
+        unlocked=true;
+        return status();
     }
 
     synchronized JSONObject signIn(String email,String password) throws Exception {
         validate(email,password);
         JSONObject account=post(AUTH+"/accounts:signInWithPassword?key="+apiKey,new JSONObject().put("email",email).put("password",password).put("returnSecureToken",true));
-        JSONObject lookup=post(AUTH+"/accounts:lookup?key="+apiKey,new JSONObject().put("idToken",account.getString("idToken")));
-        JSONArray users=lookup.optJSONArray("users");
-        if(users==null||users.length()==0)throw new Exception("Firebase tidak mengembalikan akun yang dapat diverifikasi.");
-        JSONObject user=users.getJSONObject(0);
-        if(!user.optBoolean("emailVerified",false)){
-            save(account);
-            post(AUTH+"/accounts:sendOobCode?key="+apiKey,new JSONObject().put("requestType","VERIFY_EMAIL").put("idToken",secret("idToken")));
-            throw new Exception("Email belum diverifikasi. Tautan verifikasi baru dikirim ke "+OWNER+". Buka tautan itu, lalu masuk kembali.");
-        }
         save(account);unlocked=true;return status();
     }
 

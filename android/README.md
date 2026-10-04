@@ -5,16 +5,15 @@ Aplikasi Android pribadi untuk BUMDes. Menu transaksi, anggota, simulasi dari st
 ## Pemasangan dan data awal
 
 1. Pasang APK Buku Pupuk. Android minimum 8.0.
-2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri.
-3. Buka email tersebut dan tekan tautan verifikasi dari Firebase, lalu kembali ke aplikasi dan masuk.
-4. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
-5. Di HP lain, pasang APK versi 1.4.0, lalu masuk dengan alamat dan kata sandi yang sama.
+2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri. Setelah akun dibuat, aplikasi langsung masuk tanpa verifikasi email.
+3. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
+4. Di HP lain, pasang APK versi 1.4.1, lalu masuk dengan alamat dan kata sandi yang sama.
 
 Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu Laporan / Cadangan. Jangan menghapus cadangan lama sebelum memeriksa file baru.
 
 ## Penyimpanan
 
-- Database utama memakai Firebase Authentication dan Realtime Database project `buku-pupuk-desa-kabat` di region Singapore. Paket Spark gratis dipilih. Email/sandi Firebase mengautentikasi pengguna; aturan database hanya mengizinkan `xmuammar@gmail.com` yang sudah memverifikasi email.
+- Database utama memakai Firebase Authentication dan Realtime Database project `buku-pupuk-desa-kabat` di region Singapore. Paket Spark gratis dipilih. Email/sandi Firebase mengautentikasi pengguna; aturan database hanya mengizinkan akun `xmuammar@gmail.com`, tanpa mewajibkan verifikasi email. Aturan tetap menolak semua akun lainnya dan tidak membuka database untuk publik.
 - APK memakai `android/firebase/google-services.json`, yaitu konfigurasi klien Android Firebase. Ini bukan service account JSON dan tidak mengandung kunci privat server. Kata sandi tidak ditanam di APK.
 - Transaksi, anggota, pengaturan simulasi, dan kwitansi dalam bentuk data gambar/PDF termasuk dalam JSON tersebut. Foto kwitansi diperkecil; batas lampiran sekitar 1,5 MB setelah encoding dan batas database 64 MB.
 - Sebelum mengirim perubahan, aplikasi menyimpan jurnal atomik di penyimpanan privat HP. Saat internet putus, transaksi tetap tersimpan lokal dan menunggu sinkronisasi.
@@ -47,7 +46,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.0.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.1.apk`.
 
 ## Pengujian
 
@@ -91,8 +90,8 @@ Pengujian `android/tests/finance.test.ts` mencakup alokasi Rp1 juta, pembulatan,
 
 Tulisan “© 2026 · Hak cipta aplikasi milik Muammar, SST, M.Kom” ditampilkan pada footer setiap halaman, panel Menu lainnya, dan halaman pengaturan pertama. APK versionCode 4 memakai sertifikat pembaruan yang sama.
 
-## Login Firebase — Android 1.4.0
+## Login Firebase — Android 1.4.0+
 
-Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pembuatan akun mengirim tautan verifikasi; database tetap menolak akses sebelum verifikasi email selesai. Menu login menyediakan reset kata sandi Firebase. Kata sandi tidak disimpan aplikasi. Refresh token disimpan terenkripsi oleh Android Keystore. Kunci aplikasi di Menu lainnya mengunci sesi pada HP; masuk kembali diperlukan.
+Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pendaftaran langsung membuka aplikasi tanpa mengirim atau menunggu tautan verifikasi email. Akun lama yang belum terverifikasi juga dapat masuk dengan kata sandinya. Menu login menyediakan reset kata sandi Firebase. Kata sandi tidak disimpan aplikasi. Refresh token disimpan terenkripsi oleh Android Keystore. Kunci aplikasi di Menu lainnya mengunci sesi pada HP; masuk kembali diperlukan.
 
-`google-services.json` cocok dengan project dan package ID Android `id.desakabat.bukupupuk`. Aturan Firebase membatasi baca/tulis ke email terverifikasi yang ditentukan. Jangan mengganti aturan menjadi akses publik.
+`google-services.json` cocok dengan project dan package ID Android `id.desakabat.bukupupuk`. Aturan database tersimpan di `android/firebase/database.rules.json`; deploy dengan `firebase deploy --only database` setelah login Firebase CLI sebagai pemilik project. Aturan hanya menerima email BUMDes yang ditentukan, tanpa syarat verifikasi, dan tidak boleh diganti menjadi akses publik.

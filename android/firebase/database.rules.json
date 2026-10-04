@@ -1,0 +1,8 @@
+{
+  "rules": {
+    "buku-pupuk": {
+      ".read": "auth != null && auth.token.email === 'xmuammar@gmail.com'",
+      ".write": "auth != null && auth.token.email === 'xmuammar@gmail.com'"
+    }
+  }
+}
