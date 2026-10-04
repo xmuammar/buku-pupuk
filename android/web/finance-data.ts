@@ -1,4 +1,4 @@
-import {reportData,type RecordRow} from '../../lib/report-data';
+import {reportData,type RecordRow} from '../lib/report-data';
 export type FinanceInput={basis:'actual'|'manual';profit:number;chairPercent:number;treasurerPercent:number;supervisorPercent:number;supervisorCount:number;from:string;to:string;note:string};
 export type SavedFinance={inputs:FinanceInput;updatedAt:string};
 export const defaultFinance=():FinanceInput=>({basis:'actual',profit:0,chairPercent:15,treasurerPercent:10,supervisorPercent:5,supervisorCount:1,from:'',to:'',note:''});

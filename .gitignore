@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/android/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -44,3 +45,5 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+/android/build/
+/android/native/assets/

@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {applyRequest,blankSnapshot,readSnapshot,type Snapshot} from '../web/database';
-import {reportData} from '../../lib/report-data';
+import {reportData} from '../lib/report-data';
 const transaction=(type:string,extra:object={})=>({type,date:'2026-10-03',name:'Pengujian',product:'',qty:0,sacks:0,unitPrice:0,amount:100_000,paid:0,ref:'',note:'',receiptName:'',receiptData:'',...extra});
 const post=(s:Snapshot,type:string,extra:object={})=>applyRequest(s,'/api/records','POST',transaction(type,extra));
 test('cash uses initial payments and subsequent payments once; stock is kg / 50',()=>{const s=blankSnapshot();assert.equal(post(s,'withdraw',{amount:1_000_000}).status,200);assert.equal(post(s,'purchase',{product:'Urea',qty:500,sacks:10,unitPrice:90_000,amount:900_000,paid:400_000}).status,200);const purchase=s.records[1];assert.equal(post(s,'pay',{amount:500_000,ref:purchase.id}).status,200);assert.equal(post(s,'expense',{amount:50_000,product:'Urea',sacks:10,unitPrice:5_000}).status,200);const d=reportData(s.records);assert.equal(d.cash,50_000);assert.equal(d.debtTotal,0);assert.equal(d.stock[0].balanceSacks,10);assert.equal(d.payments,950_000);});

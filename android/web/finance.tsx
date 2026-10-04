@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
 import {Banknote,Wallet,Users,Save,RefreshCw,Info,TrendingUp} from 'lucide-react';
-import MoneyInput from '../../app/money-input';
-import type {RecordRow} from '../../lib/report-data';
+import MoneyInput from '../app/money-input';
+import type {RecordRow} from '../lib/report-data';
 import {defaultFinance,profitFromRecords,splitProfit,validFinance,type FinanceInput,type SavedFinance} from './finance-data';
 const rp=(v:number)=>new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(v);
 export default function Finance({rows,loading,recordsError}:{rows:RecordRow[];loading:boolean;recordsError:string}){

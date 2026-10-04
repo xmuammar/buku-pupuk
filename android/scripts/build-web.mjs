@@ -53,8 +53,8 @@ const adapt={name:'android-app-adapter',setup(builder){
   return{contents:source,loader:'tsx' ,resolveDir:path.dirname(args.path)};
  });
 }};
-await build({entryPoints:[path.join(root,'android/web/main.tsx')],bundle:true,minify:true,sourcemap:false,outfile:path.join(out,'app.js'),platform:'browser',target:'es2020',jsx:'automatic',tsconfig:path.join(root,'tsconfig.json'),plugins:[adapt],define:{'process.env.NODE_ENV':'"production"'},logLevel:'warning'});
-const css=(await readFile(path.join(root,'app/globals.css'),'utf8')).replace(/^@import[^\n]+\n/,'')+'\n'+await readFile(path.join(root,'android/web/android.css'),'utf8');
-await writeFile(path.join(out,'app.css'),css);await cp(path.join(root,'public/fonts'),path.join(out,'fonts'),{recursive:true});
+await build({entryPoints:[path.join(root,'android/web/main.tsx')],bundle:true,minify:true,sourcemap:false,outfile:path.join(out,'app.js'),platform:'browser',target:'es2020',jsx:'automatic',tsconfig:path.join(root,'android/tsconfig.json'),plugins:[adapt],define:{'process.env.NODE_ENV':'"production"'},logLevel:'warning'});
+const css=(await readFile(path.join(root,'android/app/globals.css'),'utf8')).replace(/^@import[^\n]+\n/,'')+'\n'+await readFile(path.join(root,'android/web/android.css'),'utf8');
+await writeFile(path.join(out,'app.css'),css);await cp(path.join(root,'android/public/fonts'),path.join(out,'fonts'),{recursive:true});
 await writeFile(path.join(out,'index.html'),'<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light"><title>Buku Pupuk</title><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>');
 console.log('Bundled Android UI, Firebase client config, reports, fonts, receipts, and backup export adapter.');

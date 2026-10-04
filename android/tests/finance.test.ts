@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {defaultFinance,splitProfit,validFinance,profitFromRecords} from '../web/finance-data';
 import {applyRequest,blankSnapshot,readSnapshot} from '../web/database';
-import type {RecordRow} from '../../lib/report-data';
+import type {RecordRow} from '../lib/report-data';
 const record=(id:string,type:string,values:Partial<RecordRow>):RecordRow=>({id,type,date:'2026-10-03',name:'Uji',product:'',qty:0,amount:1,paid:0,ref:'',note:'',...values});
 test('requested 15/10/5 allocation leaves exactly 70% capital',()=>{const result=splitProfit(1_000_000,defaultFinance());assert.deepEqual([result.chair,result.treasurer,result.supervisors,result.honor,result.capital],[150000,100000,50000,300000,700000]);assert.equal(result.honorPercent,30);assert.equal(result.capitalPercent,70);});
 test('rounding and multiple supervisors preserve every rupiah; losses never fund honor',()=>{const input={...defaultFinance(),supervisorCount:3};const r=splitProfit(100001,input);assert.equal(r.honor+r.capital,100001);assert.equal(r.perSupervisor*3+r.supervisorRemainder,r.supervisors);assert.equal(splitProfit(-1000,input).honor,0);assert.equal(splitProfit(-1000,input).capital,0);const large=splitProfit(Number.MAX_SAFE_INTEGER,{...input,chairPercent:100,treasurerPercent:0,supervisorPercent:0});assert.equal(large.chair,Number.MAX_SAFE_INTEGER);assert.equal(large.capital,0);});

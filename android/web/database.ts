@@ -1,7 +1,7 @@
 import {validFinance,readFinance,canonicalFinance,type SavedFinance,type FinanceInput} from './finance-data';
-import {reportData, type RecordRow} from '../../lib/report-data';
-import {validMember, type Member} from '../../lib/member-data';
-import {canonicalInputs, normalizeSavedSimulation, validSimulationInput, type SavedSimulation, type SimulationInput} from '../../lib/simulation';
+import {reportData, type RecordRow} from '../lib/report-data';
+import {validMember, type Member} from '../lib/member-data';
+import {canonicalInputs, normalizeSavedSimulation, validSimulationInput, type SavedSimulation, type SimulationInput} from '../lib/simulation';
 
 export type Snapshot = {app: 'buku-pupuk'; version: 1; createdAt: string; recordCount: number; records: RecordRow[]; members: Member[]; simulation: SavedSimulation | null; finance?: SavedFinance | null};
 export type ApiResult = {status: number; body: unknown; changed?: boolean};

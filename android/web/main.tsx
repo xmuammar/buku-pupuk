@@ -1,6 +1,6 @@
 import {useEffect,useState} from 'react';
 import {createRoot} from 'react-dom/client';
-import Page from '../../app/page';
+import Page from '../app/page';
 import {clearSession,currentStatus,driveAction,initialize,native,type DriveStatus} from './native';
 import {ShieldCheck} from 'lucide-react';
 import AppCopyright from './copyright';
