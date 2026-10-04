@@ -36,6 +36,7 @@ final class FirebaseAuth {
         String packageName=client.getJSONObject("client_info").getJSONObject("android_client_info").getString("package_name");
         if(!"id.desakabat.bukupupuk".equals(packageName))throw new Exception("Konfigurasi Firebase tidak cocok dengan aplikasi Buku Pupuk.");
         apiKey=client.getJSONArray("api_key").getJSONObject(0).getString("current_key");
+        unlocked=!secret("refreshToken").isEmpty();
     }
 
     synchronized JSONObject status() throws Exception {
@@ -44,6 +45,11 @@ final class FirebaseAuth {
     }
     synchronized boolean unlocked(){return unlocked;}
     synchronized void lock(){unlocked=false;}
+    synchronized JSONObject unlockSaved() throws Exception {
+        if(secret("refreshToken").isEmpty())throw new Exception("Sesi Firebase belum tersimpan. Masuk dengan kata sandi terlebih dahulu.");
+        unlocked=true;
+        return status();
+    }
 
     synchronized JSONObject signUp(String email,String password) throws Exception {
         validate(email,password);

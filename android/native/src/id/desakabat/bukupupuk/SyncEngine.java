@@ -77,7 +77,7 @@ public final class SyncEngine {
             String payload=desired.toString(),currentHash=hash(current),desiredHash=hash(payload);
             // Recover a crash after a successful cloud write but before the local acknowledgement.
             if(!currentHash.equals(desiredHash)) {
-                if(!currentHash.equals(journal.optString("cloudHash")))throw new Exception("Data berubah di HP lain. Buka ulang data lalu ulangi perubahan jika perlu.");
+                if(!currentHash.equals(journal.optString("cloudHash")))throw new Exception("REMOTE_CHANGED");
                 storage.writeCloud(payload);
                 String check=storage.readCloud();
                 if(!hash(check).equals(desiredHash))throw new Exception("Data online belum cocok setelah disimpan. Salinan HP tetap tersedia.");
@@ -85,7 +85,8 @@ public final class SyncEngine {
             journal.put("cloudHash",desiredHash).put("pending",false).put("lastSavedAt",Instant.now().toString()).put("error","");
             saveJournal();
         } catch(Exception error) {
-            journal.put("pending",true).put("error",error.getMessage()==null?"Data online belum diperbarui. Salinan HP tetap tersimpan.":error.getMessage());saveJournal();
+            String message=error.getMessage();
+            journal.put("pending",true).put("error","REMOTE_CHANGED".equals(message)?"":message==null?"Data online belum diperbarui. Salinan HP tetap tersimpan.":message);saveJournal();
         }
         return status();
     }

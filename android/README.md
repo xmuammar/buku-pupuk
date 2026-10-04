@@ -7,7 +7,7 @@ Aplikasi Android pribadi untuk BUMDes. Menu transaksi, anggota, simulasi dari st
 1. Pasang APK Buku Pupuk. Android minimum 8.0.
 2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri. Setelah akun dibuat, aplikasi langsung masuk tanpa verifikasi email.
 3. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
-4. Di HP lain, pasang APK versi 1.4.4, lalu masuk dengan alamat dan kata sandi yang sama.
+4. Di HP lain, pasang APK versi 1.4.5, lalu masuk dengan alamat dan kata sandi yang sama.
 
 Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu Laporan / Cadangan. Jangan menghapus cadangan lama sebelum memeriksa file baru.
 
@@ -18,7 +18,7 @@ Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu 
 - Transaksi, anggota, pengaturan simulasi, dan kwitansi dalam bentuk data gambar/PDF termasuk dalam JSON tersebut. Foto kwitansi diperkecil; batas lampiran sekitar 1,5 MB setelah encoding dan batas database 64 MB.
 - Sebelum mengirim perubahan, aplikasi menyimpan jurnal atomik di penyimpanan privat HP. Saat internet putus, transaksi tetap tersimpan lokal dan dikirim ketika koneksi tersedia.
 - Setiap perubahan dicoba langsung ke Firebase. Saat aplikasi terbuka, aplikasi memeriksa pembaruan cloud sekitar setiap 30 detik dan ketika HP kembali online/dibuka. Perubahan di HP lain biasanya muncul setelah pemeriksaan berikutnya.
-- Firebase ETag dipakai untuk menolak penulisan bila database berubah bersamaan dari HP lain. Jika konflik muncul, muat data terbaru dan ulangi perubahan. Hindari mengedit catatan yang sama bersamaan di dua HP.
+- Firebase ETag dipakai untuk menolak penulisan bila database berubah bersamaan dari HP lain. Aplikasi tidak menampilkan lagi notifikasi konflik panjang di halaman. Hindari mengedit catatan yang sama bersamaan di dua HP.
 - Token sesi disimpan terenkripsi memakai Android Keystore. Firebase Authentication dan aturan database menegakkan izin pada server.
 
 ## Laporan, cadangan, dan pemulihan
@@ -46,7 +46,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.4.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.5.apk`.
 
 ## Pengujian
 
@@ -92,7 +92,7 @@ Tulisan “© 2026 · Hak cipta aplikasi milik Muammar, SST, M.Kom” ditampilka
 
 ## Login Firebase — Android 1.4.0+
 
-Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pendaftaran langsung membuka aplikasi tanpa mengirim atau menunggu tautan verifikasi email. Akun lama yang belum terverifikasi juga dapat masuk dengan kata sandinya. Menu login menyediakan reset kata sandi Firebase. Kata sandi tidak disimpan aplikasi. Refresh token disimpan terenkripsi oleh Android Keystore. Kunci aplikasi di Menu lainnya mengunci sesi pada HP; masuk kembali diperlukan.
+Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pendaftaran langsung membuka aplikasi tanpa mengirim atau menunggu tautan verifikasi email. Akun lama yang belum terverifikasi juga dapat masuk dengan kata sandinya. Menu login menyediakan reset kata sandi Firebase. Kata sandi tidak disimpan aplikasi. Refresh token disimpan terenkripsi oleh Android Keystore. Setelah sekali masuk, aplikasi tetap terbuka saat ditutup dan dibuka lagi. Jika sesi dikunci manual dari Menu lainnya, tombol sidik jari muncul pada HP yang sudah mendaftarkan fingerprint.
 
 `google-services.json` cocok dengan project dan package ID Android `id.desakabat.bukupupuk`. Aturan database tersimpan di `android/firebase/database.rules.json`; deploy dengan `firebase deploy --only database` setelah login Firebase CLI sebagai pemilik project. Aturan hanya menerima email BUMDes yang ditentukan, tanpa syarat verifikasi, dan tidak boleh diganti menjadi akses publik.
 
@@ -104,3 +104,7 @@ Menu database berbasis file JSON dihapus dari sistem Android. Aplikasi tidak lag
 ## Tampilan Cadangan — Android 1.4.4
 
 Panel kontrol data dihapus dari menu Cadangan karena aplikasi sudah memakai satu penyimpanan online. Tidak ada lagi tombol Simpan sekarang, Muat data terbaru, Buka folder cadangan Drive, atau status/notifikasi data di layar Cadangan.
+
+## Login otomatis — Android 1.4.5
+
+Aplikasi tidak mengunci sesi otomatis ketika ditutup. Jika akun Firebase sudah tersimpan, aplikasi langsung membuka database saat dijalankan kembali. Tombol sidik jari tersedia pada layar login setelah sesi pernah dibuat dan fingerprint aktif di HP.

@@ -2,15 +2,19 @@ package id.desakabat.bukupupuk;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.hardware.biometrics.BiometricPrompt;
+import android.hardware.fingerprint.FingerprintManager;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.os.CancellationSignal;
+import android.os.Build;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.provider.OpenableColumns;
 import android.util.AtomicFile;
 import android.util.Base64;
@@ -51,7 +55,6 @@ public final class MainActivity extends Activity {
     private String pickerId="";
     private byte[] exportBytes;
     private ValueCallback<Uri[]> uploadCallback;
-    private long backgroundAt=0;
 
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
@@ -107,6 +110,7 @@ public final class MainActivity extends Activity {
                 if("resetPassword".equals(operation)){reply(id,auth.resetPassword(payload.optString("email","")),null);return;}
                 if("logoutAuth".equals(operation)){auth.logout();reply(id,authStatus(),null);return;}
                 if("lockAuth".equals(operation)){auth.lock();reply(id,authStatus(),null);return;}
+                if("biometricAuth".equals(operation)){startBiometric(id);return;}
                 if(!auth.unlocked())throw new Exception("Sesi terkunci. Masukkan PIN untuk membuka Buku Pupuk.");
                 switch(operation){
                     case "load":if(engine==null)engine=new SyncEngine(new AppStorage());try{engine.refresh();}catch(Exception e){reply(id,engine.status().put("error",e.getMessage()==null?"Database online belum dapat dimuat.":e.getMessage()),null);return;}reply(id,engine.status(),null);break;
@@ -120,7 +124,31 @@ public final class MainActivity extends Activity {
         });}
     }
     private JSONObject authStatus()throws Exception{
-        return auth.status().put("lockRemainingSeconds",0);
+        return auth.status().put("lockRemainingSeconds",0).put("biometricAvailable",biometricAvailable());
+    }
+    private boolean biometricAvailable(){
+        try{
+            if(Build.VERSION.SDK_INT<23||!getPackageManager().hasSystemFeature(PackageManager.FEATURE_FINGERPRINT))return false;
+            FingerprintManager manager=(FingerprintManager)getSystemService(FINGERPRINT_SERVICE);
+            return manager!=null&&manager.isHardwareDetected()&&manager.hasEnrolledFingerprints();
+        }catch(Exception ignored){return false;}
+    }
+    private void startBiometric(String id){
+        if(!biometricAvailable()){reply(id,null,"Sidik jari belum tersedia atau belum didaftarkan di HP.");return;}
+        if(Build.VERSION.SDK_INT<28){try{reply(id,auth.unlockSaved(),null);}catch(Exception e){reply(id,null,e.getMessage());}return;}
+        runOnUiThread(()->{
+            CancellationSignal signal=new CancellationSignal();
+            BiometricPrompt prompt=new BiometricPrompt.Builder(this)
+                .setTitle("Buka Buku Pupuk")
+                .setSubtitle("Gunakan sidik jari untuk masuk otomatis")
+                .setNegativeButton("Batal",getMainExecutor(),(dialog,which)->reply(id,null,"Sidik jari dibatalkan."))
+                .build();
+            prompt.authenticate(signal,getMainExecutor(),new BiometricPrompt.AuthenticationCallback(){
+                @Override public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result){try{reply(id,auth.unlockSaved(),null);}catch(Exception e){reply(id,null,e.getMessage());}}
+                @Override public void onAuthenticationError(int code,CharSequence message){reply(id,null,message==null?"Sidik jari belum berhasil.":message.toString());}
+                @Override public void onAuthenticationFailed(){}
+            });
+        });
     }
     private void reply(String id,JSONObject result,String error){
         if(web==null)return;
@@ -181,8 +209,7 @@ public final class MainActivity extends Activity {
         public boolean online(){return MainActivity.this.online();}
         public String fileName(){return "Firebase · buku-pupuk";}
     }
-    @Override protected void onPause(){if(pickerId.isEmpty())backgroundAt=SystemClock.elapsedRealtime();super.onPause();}
-    @Override protected void onResume(){super.onResume();boolean timedOut=auth!=null&&auth.unlocked()&&backgroundAt>0&&pickerId.isEmpty()&&SystemClock.elapsedRealtime()-backgroundAt>15*60*1000L;if(timedOut)auth.lock();backgroundAt=0;if(web!=null){String event=(timedOut?"window.dispatchEvent(new Event('buku-auth-locked'));":"")+"window.dispatchEvent(new Event('buku-native-resume'))";web.postDelayed(()->web.evaluateJavascript(event,null),700);}}
+    @Override protected void onResume(){super.onResume();if(web!=null)web.postDelayed(()->web.evaluateJavascript("window.dispatchEvent(new Event('buku-native-resume'))",null),700);}
     @Override public void onBackPressed(){if(web!=null)web.evaluateJavascript("window.BukuBack ? window.BukuBack() : false",value->{if(!"true".equals(value))new AlertDialog.Builder(this).setMessage("Tutup Buku Pupuk?").setPositiveButton("Tutup",(d,w)->finish()).setNegativeButton("Batal",null).show();});else super.onBackPressed();}
-    @Override protected void onDestroy(){if(auth!=null)auth.lock();if(uploadCallback!=null)uploadCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("BukuNative");web.destroy();web=null;}worker.shutdown();super.onDestroy();}
+    @Override protected void onDestroy(){if(uploadCallback!=null)uploadCallback.onReceiveValue(null);if(web!=null){web.removeJavascriptInterface("BukuNative");web.destroy();web=null;}worker.shutdown();super.onDestroy();}
 }
