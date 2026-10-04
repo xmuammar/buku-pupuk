@@ -22,7 +22,10 @@ public final class SyncEngineTest {
         Store m=new Store();m.cloud=doc(0).toString();SyncEngine mismatch=new SyncEngine(m);mismatch.acceptCloud(m.cloud);m.mismatch=true;mismatch.commit(doc(1),mismatch.status().getLong("revision"));check(mismatch.pending(),"readback mismatch pending");
         Store crash=new Store();crash.cloud=doc(0).toString();SyncEngine ce=new SyncEngine(crash);ce.acceptCloud(crash.cloud);crash.ackFail=true;JSONObject acknowledged=ce.commit(doc(1),ce.status().getLong("revision"));check(acknowledged.getBoolean("pending"),"ack failure never reports failed transaction");crash.ackFail=false;ce=new SyncEngine(crash);ce.sync();check(!ce.pending()&&crash.writes==1,"crash recovers without repeated write");
         Store refresh=new Store();refresh.cloud=doc(0).toString();SyncEngine re=new SyncEngine(refresh);re.acceptCloud(refresh.cloud);refresh.cloud=doc(2).toString();check(re.refresh().getJSONObject("snapshot").getInt("recordCount")==2,"external refresh");
+        Store migration=new Store();migration.connected=false;SyncEngine me=new SyncEngine(migration);me.commit(doc(1),0); // keep a durable local-only business record
+        migration.connected=true;migration.cloud=doc(0).toString();JSONObject migrated=me.refresh();check(!migrated.getBoolean("pending")&&new JSONObject(migration.cloud).getInt("recordCount")==1,"seed existing local book only into empty cloud");
+        Store keepCloud=new Store();keepCloud.cloud=doc(2).toString();SyncEngine kc=new SyncEngine(keepCloud);JSONObject kept=kc.refresh();check(kept.getJSONObject("snapshot").getInt("recordCount")==2,"non-empty cloud wins on a fresh device");
         boolean stale=false;try{re.commit(doc(4),0);}catch(Exception expected){stale=true;}check(stale,"stale revision rejected");
-        System.out.println("PASS: durable offline journal, provider failure, conflict protection, readback verification, crash recovery, refresh, stale revision.");
+        System.out.println("PASS: offline journal, provider failure, conflict protection, readback verification, crash recovery, cloud refresh, empty-cloud migration, non-empty cloud preservation, stale revision.");
     }
 }

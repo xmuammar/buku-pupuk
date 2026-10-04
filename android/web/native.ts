@@ -13,9 +13,7 @@ export const clearSession=()=>{status=null;};
 export async function initialize(){return publish(await native<DriveStatus>('load'));}
 export function exclusive<T>(task:()=>Promise<T>):Promise<T>{const next=queue.then(task,task);queue=next.catch(()=>{});return next;}
 export async function driveAction(operation:'sync'|'refresh'){return exclusive(async()=>{
-  if(operation==='sync'||status?.pending)return publish(await native<DriveStatus>('sync'));
-  const candidate=await native<{token:string;snapshot:unknown}>('previewDrive');readSnapshot(candidate.snapshot);
-  return publish(await native<DriveStatus>('acceptDatabase',{token:candidate.token}));
+  return publish(await native<DriveStatus>(operation==='sync'||status?.pending?'sync':'refresh'));
 });}
 export async function selectDatabase(create=false){return exclusive(async()=>{const candidate=await native<{token:string;snapshot:unknown;fileName:string}>(create?'createDatabase':'openDatabase',{filename:'buku-pupuk-database.json'});readSnapshot(candidate.snapshot);return publish(await native<DriveStatus>('acceptDatabase',{token:candidate.token}));});}
 window.fetch=(async(input:RequestInfo|URL,init?:RequestInit)=>{

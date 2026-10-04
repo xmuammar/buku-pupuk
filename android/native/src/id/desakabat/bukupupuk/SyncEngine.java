@@ -90,11 +90,24 @@ public final class SyncEngine {
         return status();
     }
     public synchronized JSONObject refresh() throws Exception {
-        if(pending())return sync();
+        if(pending()&&!storage.online())return sync();
         if(!storage.connected())throw new Exception("Pilih file Google Drive terlebih dahulu.");
         if(!storage.online())throw new Exception("Internet belum tersedia. Salinan HP tetap dapat dipakai.");
         String current=storage.readCloud();
+        JSONObject cloud=new JSONObject(current),local=journal.getJSONObject("snapshot");
+        // A newly-created Firebase node is the safe one-time migration target for an existing local book.
+        // Only seed when the server is truly empty; never merge over a non-empty cloud database.
+        if(isEmpty(cloud)&&!isEmpty(local)){
+            journal.put("cloudHash",hash(current)).put("pending",true).put("error","");saveJournal();
+            return sync();
+        }
+        if(pending())return sync();
         if(!hash(current).equals(journal.optString("cloudHash")))acceptCloud(current);
         return status();
+    }
+    private static boolean isEmpty(JSONObject doc){
+        JSONArray records=doc.optJSONArray("records"),members=doc.optJSONArray("members");
+        return (records==null||records.length()==0)&&(members==null||members.length()==0)&&
+            !doc.has("finance")&&(!doc.has("simulation")||doc.isNull("simulation"));
     }
 }

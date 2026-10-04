@@ -4,23 +4,23 @@ Aplikasi Android pribadi untuk BUMDes. Menu transaksi, anggota, simulasi dari st
 
 ## Pemasangan dan data awal
 
-1. Pasang Google Drive di HP, masuk ke akun pemilik data, dan perbarui Android System WebView bila diperlukan.
-2. Unduh APK Buku Pupuk. Buka file dan izinkan pemasangan dari aplikasi yang dipakai untuk mengunduh. Android minimum 8.0.
-3. Buka Buku Pupuk lalu tekan **Pilih file Drive**.
-4. Pada pemilih file Android, buka menu ☰, pilih **Drive** dan akun yang benar, lalu folder **laporan pupuk**.
-5. Pilih **buku-pupuk-database-android-2026-10-03.json** yang disiapkan untuk migrasi. Izinkan akses baca dan tulis. Nama file muncul di bagian atas aplikasi.
+1. Pasang APK Buku Pupuk. Android minimum 8.0.
+2. Pada HP pertama, buat akun Firebase dengan alamat **xmuammar@gmail.com**. Buat kata sandi yang Bapak simpan sendiri.
+3. Buka email tersebut dan tekan tautan verifikasi dari Firebase, lalu kembali ke aplikasi dan masuk.
+4. Aplikasi menghubungkan database Firebase. Jika database cloud masih kosong dan HP ini memiliki jurnal lokal lama, jurnal lokal itu disalin sebagai data awal. Jika database sudah berisi data, aplikasi memuat data cloud.
+5. Di HP lain, pasang APK versi 1.4.0, lalu masuk dengan alamat dan kata sandi yang sama.
 
-File database tidak disertakan dalam APK atau repository. File awal dibuat sebagai salinan baru dari data website dan diverifikasi dengan unduhan ulang. Cadangan lama tetap disimpan.
+Gunakan Google Drive untuk menyimpan salinan PDF, Excel, atau JSON melalui menu Laporan / Cadangan. Jangan menghapus cadangan lama sebelum memeriksa file baru.
 
 ## Penyimpanan
 
-- Database berupa satu file JSON Buku Pupuk di Google Drive, diakses melalui Storage Access Framework Android. Tidak perlu Firebase berbayar, server tambahan, API key, atau konfigurasi OAuth Google Cloud.
+- Database utama memakai Firebase Authentication dan Realtime Database project `buku-pupuk-desa-kabat` di region Singapore. Paket Spark gratis dipilih. Email/sandi Firebase mengautentikasi pengguna; aturan database hanya mengizinkan `xmuammar@gmail.com` yang sudah memverifikasi email.
+- APK memakai `android/firebase/google-services.json`, yaitu konfigurasi klien Android Firebase. Ini bukan service account JSON dan tidak mengandung kunci privat server. Kata sandi tidak ditanam di APK.
 - Transaksi, anggota, pengaturan simulasi, dan kwitansi dalam bentuk data gambar/PDF termasuk dalam JSON tersebut. Foto kwitansi diperkecil; batas lampiran sekitar 1,5 MB setelah encoding dan batas database 64 MB.
-- Sebelum menulis Drive, aplikasi menyimpan jurnal atomik di penyimpanan privat HP. Saat internet tidak tersedia, transaksi tetap tersimpan dan status menunjukkan **Drive belum diperbarui**.
-- Penulisan dicoba saat menyimpan, ketika aplikasi dibuka kembali, setiap menit selama aplikasi aktif, dan melalui **Kirim ke Drive**. Tidak ada janji sinkronisasi latar belakang ketika aplikasi ditutup.
-- Setelah menulis, aplikasi membaca ulang file dari penyedia Drive dan membandingkan SHA-256. Status **ditulis ke file Drive** berarti penyedia file telah menerima isi yang cocok. Aplikasi Google Drive sendiri menyelesaikan unggahan ke server; ini bukan bukti terpisah bahwa server sudah menerima unggahan. Periksa status unggahan di aplikasi Drive, terutama sebelum mengganti HP.
-- **Muat dari Drive** membaca dan memvalidasi data sebelum mengganti salinan HP. File rusak atau transaksi tidak valid tidak digunakan.
-- Gunakan **satu HP aktif**. Pemeriksaan perubahan file mencegah banyak penimpaan tidak sengaja, tetapi penyedia file Android tidak menyediakan transaksi atau compare-and-swap atomik untuk penulisan bersamaan dari beberapa HP.
+- Sebelum mengirim perubahan, aplikasi menyimpan jurnal atomik di penyimpanan privat HP. Saat internet putus, transaksi tetap tersimpan lokal dan menunggu sinkronisasi.
+- Setiap perubahan dicoba langsung ke Firebase. Saat aplikasi terbuka, aplikasi memeriksa pembaruan cloud sekitar setiap 30 detik dan ketika HP kembali online/dibuka. Perubahan di HP lain biasanya muncul setelah pemeriksaan berikutnya; sinkronisasi tidak berjalan ketika aplikasi ditutup.
+- Firebase ETag dipakai untuk menolak penulisan bila database berubah bersamaan dari HP lain. Jika konflik muncul, muat data terbaru dan ulangi perubahan. Hindari mengedit catatan yang sama bersamaan di dua HP.
+- Token sesi disimpan terenkripsi memakai Android Keystore. Firebase Authentication dan aturan database menegakkan izin pada server.
 
 ## Laporan, cadangan, dan pemulihan
 
@@ -28,9 +28,9 @@ PDF dan Excel mempertahankan ringkasan pada halaman / sheet pertama, rincian tra
 
 Di **Laporan & cadangan**, pilih JSON, Excel, atau PDF kemudian pilih Google Drive pada pemilih tujuan. Android membuat file baru dan tidak menghapus cadangan lama. Ekspor JSON mencakup seluruh database; PDF dan Excel adalah laporan dan tidak digunakan untuk memulihkan transaksi.
 
-Jika pemasangan diulang atau pindah HP, pilih file database Drive yang sama. Untuk mengimpor JSON tambahan, gunakan **Pulihkan dari cadangan**. ID yang sama dengan isi berbeda ditolak; data tidak ditimpa secara diam-diam. Jika terjadi konflik Drive saat ada perubahan HP tertunda, ekspor JSON HP terlebih dahulu dan periksa kedua salinan sebelum melakukan pemulihan.
+Jika pemasangan diulang atau pindah HP, masuk ke akun Firebase yang sama. Untuk memulihkan JSON tambahan, gunakan **Pulihkan dari cadangan** di Google Drive. Cadangan lama tidak dihapus.
 
-Website ChatGPT dan APK memiliki penyimpanan utama berbeda setelah migrasi. Perubahan pada APK tidak otomatis masuk ke database website, dan perubahan website tidak otomatis masuk ke APK. Cadangan terjadwal website tetap mengambil database website. Gunakan APK sebagai buku utama jika memilih penyimpanan Drive ini.
+Website lama tidak terhubung dengan database Firebase APK. Gunakan APK sebagai aplikasi utama; transaksi website tidak otomatis disalin ke database Firebase.
 
 ## Build
 
@@ -47,7 +47,7 @@ export ECJ_JAR=/path/to/ecj.jar
 bash android/scripts/build-apk.sh
 ```
 
-Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.3.0.apk`.
+Build mengompilasi UI lokal, resource, Java, dan DEX; menyelaraskan APK; menandatangani; lalu memverifikasi signature v2/v3 dan metadata instalasi. Output default `android/build/Buku-Pupuk-Android-v1.4.0.apk`.
 
 ## Pengujian
 
@@ -91,12 +91,8 @@ Pengujian `android/tests/finance.test.ts` mencakup alokasi Rp1 juta, pembulatan,
 
 Tulisan “© 2026 · Hak cipta aplikasi milik Muammar, SST, M.Kom” ditampilkan pada footer setiap halaman, panel Menu lainnya, dan halaman pengaturan pertama. APK versionCode 4 memakai sertifikat pembaruan yang sama.
 
-## Login perangkat — Android 1.3.0
+## Login Firebase — Android 1.4.0
 
-Saat pertama kali membuka APK pada HP ini, pemilik membuat PIN 6–12 angka. Aplikasi meminta PIN saat pembukaan berikutnya; pengguna bisa mengunci aplikasi segera lewat Lainnya → Kunci aplikasi. Jika APK berada di latar selama 15 menit, akses terkunci ketika aplikasi dibuka kembali. Setelah lima PIN salah berturut-turut, akses menunggu lima menit; pelanggaran berikutnya menambah waktu tunggu sampai 60 menit.
+Aplikasi hanya menerima akun BUMDes `xmuammar@gmail.com`. Pembuatan akun mengirim tautan verifikasi; database tetap menolak akses sebelum verifikasi email selesai. Menu login menyediakan reset kata sandi Firebase. Kata sandi tidak disimpan aplikasi. Refresh token disimpan terenkripsi oleh Android Keystore. Kunci aplikasi di Menu lainnya mengunci sesi pada HP; masuk kembali diperlukan.
 
-Verifikasi disimpan di SharedPreferences privat Android, dengan salt acak dan PBKDF2-HMAC-SHA256 180.000 putaran. PIN teks tidak ditulis ke jurnal transaksi, Google Drive, backup JSON, atau Git. Flag Secure menyembunyikan konten pada tangkapan layar serta pratinjau aplikasi terbaru. Jembatan native menolak baca / ubah data transaksi sebelum sesi dibuka. Database lokal baru dibaca setelah PIN benar.
-
-PIN ini mengunci aplikasi di satu HP, bukan identitas akun website atau login lintas perangkat. Sistem situs web tetap tidak mendapat login dari perubahan APK ini. Lupa PIN tidak dapat dipulihkan lewat Google Drive karena Drive hanya menyimpan data usaha, bukan kredensial; siapkan pemulihan HP hanya setelah perubahan tertunda berhasil dicadangkan.
-
-`android/tests/AuthEngineTest.java` mencakup pembuatan PIN, penolakan pola sederhana, tidak menyimpan PIN teks, salah PIN, lockout, pemulihan setelah masa tunggu, perubahan PIN, dan sesi terkunci.
+`google-services.json` cocok dengan project dan package ID Android `id.desakabat.bukupupuk`. Aturan Firebase membatasi baca/tulis ke email terverifikasi yang ditentukan. Jangan mengganti aturan menjadi akses publik.

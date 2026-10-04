@@ -4,6 +4,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..'),out=path.join(root,'android/native/assets');
 await rm(out,{recursive:true,force:true});await mkdir(out,{recursive:true});
+await cp(path.join(root,'android/firebase/google-services.json'),path.join(out,'google-services.json'));
 const receipt=path.join(root,'android/web/receipt.tsx'),native=path.join(root,'android/web/native.ts');
 const copyright=path.join(root,'android/web/copyright.tsx');
 const finance=path.join(root,'android/web/finance.tsx');
@@ -56,4 +57,4 @@ await build({entryPoints:[path.join(root,'android/web/main.tsx')],bundle:true,mi
 const css=(await readFile(path.join(root,'app/globals.css'),'utf8')).replace(/^@import[^\n]+\n/,'')+'\n'+await readFile(path.join(root,'android/web/android.css'),'utf8');
 await writeFile(path.join(out,'app.css'),css);await cp(path.join(root,'public/fonts'),path.join(out,'fonts'),{recursive:true});
 await writeFile(path.join(out,'index.html'),'<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="color-scheme" content="light"><title>Buku Pupuk</title><link rel="stylesheet" href="/app.css"></head><body><div id="root"></div><script src="/app.js"></script></body></html>');
-console.log('Bundled Android UI, reports, fonts, receipt input, and Drive export adapter.');
+console.log('Bundled Android UI, Firebase client config, reports, fonts, receipts, and Google Drive backup adapter.');
