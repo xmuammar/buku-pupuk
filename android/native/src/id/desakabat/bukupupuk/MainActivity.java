@@ -116,7 +116,7 @@ public final class MainActivity extends Activity {
                 if("lockAuth".equals(operation)){auth.lock();reply(id,authStatus(),null);return;}
                 if(!auth.unlocked())throw new Exception("Sesi terkunci. Masukkan PIN untuk membuka Buku Pupuk.");
                 switch(operation){
-                    case "load":if(engine==null)engine=new SyncEngine(new AppStorage());try{if(!engine.pending())engine.refresh();}catch(Exception e){reply(id,engine.status().put("error",e.getMessage()==null?"Database online belum dapat dimuat.":e.getMessage()),null);return;}reply(id,engine.status(),null);break;
+                    case "load":if(engine==null)engine=new SyncEngine(new AppStorage());try{engine.refresh();}catch(Exception e){reply(id,engine.status().put("error",e.getMessage()==null?"Database online belum dapat dimuat.":e.getMessage()),null);return;}reply(id,engine.status(),null);break;
                     case "commit":reply(id,engine.commit(payload.getJSONObject("snapshot"),payload.getLong("revision")),null);break;
                     case "sync":reply(id,engine.sync(),null);break;
                     case "refresh":reply(id,engine.refresh(),null);break;
