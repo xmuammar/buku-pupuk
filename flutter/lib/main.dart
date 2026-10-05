@@ -14,6 +14,7 @@ import 'package:share_plus/share_plus.dart';
 import 'domain.dart';
 import 'store.dart';
 import 'exports.dart';
+import 'design.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,13 +49,7 @@ class BookApp extends StatelessWidget {
   Widget build(BuildContext context) => MaterialApp(
     title: 'Buku Pupuk',
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(
-      colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xff176b45)),
-      useMaterial3: true,
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
-      ),
-    ),
+    theme: bookTheme(),
     home: StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, state) {
@@ -126,46 +121,106 @@ class _LoginState extends State<Login> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    body: Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Icon(Icons.agriculture, size: 72),
-              const Text(
-                'Buku Pupuk',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 24),
-              const Text(ownerEmail),
-              const SizedBox(height: 12),
-              TextField(
-                controller: password,
-                obscureText: true,
-                decoration: const InputDecoration(labelText: 'Kata sandi'),
-                onSubmitted: (_) => busy ? null : action('login'),
-              ),
-              if (error != null)
-                Padding(padding: const EdgeInsets.all(12), child: Text(error!)),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: busy ? null : () => action('login'),
-                child: Text(busy ? 'Memproses…' : 'Masuk'),
-              ),
-              TextButton(
-                onPressed: busy ? null : () => action('register'),
-                child: const Text('Buat akun pertama'),
-              ),
-              TextButton(
-                onPressed: busy ? null : () => action('reset'),
-                child: const Text('Lupa kata sandi'),
-              ),
-              const Copyright(),
-            ],
+    body: SafeArea(
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [green, Color(0xff104F35)],
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                    child: const Icon(
+                      Icons.eco_outlined,
+                      size: 54,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Buku Pupuk',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Pencatatan usaha pupuk desa',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: muted),
+                ),
+                const SizedBox(height: 32),
+                const Text(
+                  'Masuk ke akun usaha',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xffE8F1E7),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(
+                        Icons.alternate_email_rounded,
+                        color: green,
+                        size: 19,
+                      ),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          ownerEmail,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: password,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Kata sandi',
+                    prefixIcon: Icon(Icons.lock_outline_rounded),
+                  ),
+                  onSubmitted: (_) => busy ? null : action('login'),
+                ),
+                if (error != null)
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(error!),
+                  ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: busy ? null : () => action('login'),
+                  child: Text(busy ? 'Memproses…' : 'Masuk'),
+                ),
+                TextButton(
+                  onPressed: busy ? null : () => action('register'),
+                  child: const Text('Buat akun pertama'),
+                ),
+                TextButton(
+                  onPressed: busy ? null : () => action('reset'),
+                  child: const Text('Lupa kata sandi'),
+                ),
+                const Copyright(),
+              ],
+            ),
           ),
         ),
       ),
@@ -187,7 +242,8 @@ class Copyright extends StatelessWidget {
 }
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  final BookStore? initialStore;
+  const Home({super.key, this.initialStore});
   @override
   State<Home> createState() => _HomeState();
 }
@@ -200,7 +256,12 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    init();
+    if (widget.initialStore != null) {
+      store = widget.initialStore;
+      store!.addListener(refresh);
+    } else {
+      init();
+    }
   }
 
   Future<void> init() async {
@@ -220,7 +281,7 @@ class _HomeState extends State<Home> {
   @override
   void dispose() {
     store?.removeListener(refresh);
-    store?.dispose();
+    if (widget.initialStore == null) store?.dispose();
     super.dispose();
   }
 
@@ -256,12 +317,37 @@ class _HomeState extends State<Home> {
     }
   }
 
+  void navigate(String destination) {
+    setState(() {
+      page = destination;
+      tab = [
+        'Ringkasan',
+        'Pembelian',
+        'Penjualan',
+        'Anggota',
+      ].indexOf(destination);
+      if (tab < 0) tab = 4;
+      search = '';
+    });
+  }
+
   Widget tile(String title, Object value) => Card(
-    child: ListTile(
-      title: Text(title),
-      trailing: Text(
-        '$value',
-        style: const TextStyle(fontWeight: FontWeight.bold),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(color: muted, fontSize: 12)),
+          const SizedBox(height: 5),
+          Text(
+            '$value',
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 18,
+              color: ink,
+            ),
+          ),
+        ],
       ),
     ),
   );
@@ -324,7 +410,11 @@ class _HomeState extends State<Home> {
     }
     final b = {...st.view, 'pendingChanges': st.pending},
         all = rows(b['records']),
-        report = Report(all, from: from, to: to);
+        report = Report(
+          all,
+          from: page == 'Laporan' ? from : '',
+          to: page == 'Laporan' ? to : '',
+        );
     Widget content;
     if (!st.ready) {
       content = const Center(child: CircularProgressIndicator());
@@ -339,11 +429,21 @@ class _HomeState extends State<Home> {
               .toList()
             ..sort((a, b) => s(a, 'name').compareTo(s(b, 'name')));
       content = ListView.builder(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
         itemCount: members.length,
         itemBuilder: (c, i) {
           final m = members[i];
           return Card(
             child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: const Color(0xffE4EEE3),
+                foregroundColor: green,
+                child: Text(
+                  s(m, 'name').isEmpty
+                      ? '?'
+                      : s(m, 'name').substring(0, 1).toUpperCase(),
+                ),
+              ),
               title: Text(s(m, 'name')),
               subtitle: Text(
                 '${s(m, 'nik')}\n${s(m, 'farmer_group')} • ${s(m, 'address')}',
@@ -368,25 +468,26 @@ class _HomeState extends State<Home> {
               )
               .toList()
             ..sort((a, b) => s(b, 'date').compareTo(s(a, 'date')));
-      content = ListView.builder(
-        itemCount: records.length,
-        itemBuilder: (c, i) {
-          final r = records[i];
-          return Card(
-            child: ListTile(
-              title: Text('${labels[s(r, 'type')]} • ${s(r, 'name')}'),
-              subtitle: Text(
-                '${s(r, 'date')} • ${s(r, 'product')} ${n(r, 'qty')} kg\n${s(r, 'note')}',
+      content = records.isEmpty
+          ? const EmptyState(
+              icon: Icons.receipt_long_outlined,
+              title: 'Belum ada catatan',
+              description:
+                  'Tekan Catat transaksi untuk menambahkan catatan usaha.',
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 90),
+              itemCount: records.length,
+              itemBuilder: (c, i) => TransactionCard(
+                record: records[i],
+                onTap: () => edit(s(records[i], 'type'), original: records[i]),
               ),
-              trailing: Text(money(n(r, 'amount'))),
-              onTap: () => edit(s(r, 'type'), original: r),
-            ),
-          );
-        },
-      );
+            );
     } else if (page == 'Stok pupuk') {
       content = ListView(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         children: [
+          const SectionTitle('Persediaan pupuk'),
           for (final e in report.stock.entries)
             tile(e.key, '${e.value} kg • ${report.sacks[e.key]} sak'),
           tile('Utang distributor', money(report.outstanding('purchase'))),
@@ -463,37 +564,39 @@ class _HomeState extends State<Home> {
           ),
         ],
       );
+    } else if (page == 'Lainnya') {
+      content = MoreMenu(onNavigate: navigate);
     } else {
-      content = ListView(
-        children: [
-          tile('Saldo kas', money(report.cash)),
-          tile('Pembelian pupuk', money(report.purchases)),
-          tile('Penjualan', money(report.sales)),
-          tile('Biaya operasional', money(report.expenses)),
-          tile('Utang distributor', money(report.outstanding('purchase'))),
-          tile('Piutang petani', money(report.outstanding('sale'))),
-          tile(
-            'Laba FIFO',
-            report.missing > 0 ? 'Stok tidak lengkap' : money(report.profit),
-          ),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 8,
-            children: [
-              for (final type in labels.keys)
-                ActionChip(
-                  label: Text(labels[type]!),
-                  onPressed: () => edit(type),
-                ),
-            ],
-          ),
-          const Copyright(),
-        ],
+      content = Dashboard(
+        report: report,
+        records: all,
+        onEdit: (type) => edit(type),
+        onNavigate: navigate,
       );
     }
     return Scaffold(
       appBar: AppBar(
-        title: Text(page),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              page == 'Ringkasan' ? 'Buku Pupuk' : page,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 22,
+                letterSpacing: -.6,
+              ),
+            ),
+            const Text(
+              'BUMDes · Desa Kabat',
+              style: TextStyle(
+                color: muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         actions: [
           PopupMenuButton<String>(
             onSelected: (value) {
@@ -512,7 +615,7 @@ class _HomeState extends State<Home> {
                   FirebaseAuth.instance.signOut();
                 }
               } else {
-                setState(() => page = value);
+                navigate(value);
               }
             },
             itemBuilder: (_) => [
@@ -533,24 +636,11 @@ class _HomeState extends State<Home> {
       ),
       body: Column(
         children: [
-          Material(
-            color: st.connected ? Colors.green.shade50 : Colors.amber.shade50,
-            child: ListTile(
-              dense: true,
-              title: Text(
-                '${st.connected ? 'Terhubung Firebase' : 'Offline'} • ${st.pending.length} perubahan menunggu',
-              ),
-              trailing: st.sending
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : IconButton(
-                      onPressed: () => guarded(st.flush),
-                      icon: const Icon(Icons.sync),
-                    ),
-            ),
+          SyncStrip(
+            connected: st.connected,
+            sending: st.sending,
+            pending: st.pending.length,
+            onSync: () => guarded(st.flush),
           ),
           if (st.error != null)
             Material(
@@ -593,7 +683,7 @@ class _HomeState extends State<Home> {
             ),
           if (['Anggota', 'Pembelian', 'Penjualan', 'Buku kas'].contains(page))
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
               child: TextField(
                 decoration: const InputDecoration(
                   labelText: 'Cari',
@@ -608,7 +698,7 @@ class _HomeState extends State<Home> {
       floatingActionButton:
           st.ready &&
               ['Anggota', 'Pembelian', 'Penjualan', 'Buku kas'].contains(page)
-          ? FloatingActionButton(
+          ? FloatingActionButton.extended(
               onPressed: () => edit(
                 page == 'Pembelian'
                     ? 'purchase'
@@ -617,30 +707,46 @@ class _HomeState extends State<Home> {
                     : 'expense',
                 member: page == 'Anggota',
               ),
-              child: const Icon(Icons.add),
+              icon: const Icon(Icons.add),
+              label: Text(
+                page == 'Anggota' ? 'Tambah anggota' : 'Catat transaksi',
+              ),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,
         onDestinationSelected: (i) => setState(() {
           tab = i;
-          page = ['Ringkasan', 'Pembelian', 'Penjualan', 'Anggota'][i];
+          page = [
+            'Ringkasan',
+            'Pembelian',
+            'Penjualan',
+            'Anggota',
+            'Lainnya',
+          ][i];
           search = '';
         }),
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.dashboard),
+            icon: Icon(Icons.space_dashboard_outlined),
             label: 'Ringkasan',
           ),
           NavigationDestination(
-            icon: Icon(Icons.shopping_bag),
+            icon: Icon(Icons.inventory_2_outlined),
             label: 'Pembelian',
           ),
           NavigationDestination(
             icon: Icon(Icons.point_of_sale),
             label: 'Penjualan',
           ),
-          NavigationDestination(icon: Icon(Icons.groups), label: 'Anggota'),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            label: 'Anggota',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.grid_view_rounded),
+            label: 'Lainnya',
+          ),
         ],
       ),
     );
@@ -763,7 +869,28 @@ class _EditorState extends State<Editor> {
           ? const TextInputType.numberWithOptions(decimal: true)
           : TextInputType.text,
       inputFormatters: amount ? [MoneyFormatter()] : null,
-      decoration: InputDecoration(labelText: label),
+      readOnly: key == 'date',
+      onTap: key == 'date'
+          ? () async {
+              final selected = await showDatePicker(
+                context: context,
+                firstDate: DateTime(2020),
+                lastDate: DateTime(2100),
+                initialDate:
+                    DateTime.tryParse(fields[key]!.text) ?? DateTime.now(),
+              );
+              if (selected != null) {
+                fields[key]!.text = selected.toIso8601String().substring(0, 10);
+              }
+            }
+          : null,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixText: amount ? 'Rp ' : null,
+        suffixIcon: key == 'date'
+            ? const Icon(Icons.calendar_month_outlined)
+            : null,
+      ),
       onChanged: (_) {
         if (key == 'sacks') {
           final sacks = double.tryParse(fields[key]!.text.replaceAll(',', '.'));
@@ -843,11 +970,29 @@ class _EditorState extends State<Editor> {
             .toList();
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.member ? 'Anggota' : labels[widget.type] ?? ''),
+        title: Text(
+          widget.member
+              ? widget.original == null
+                    ? 'Anggota baru'
+                    : 'Edit anggota'
+              : '${widget.original == null ? 'Catat' : 'Edit'} ${labels[widget.type] ?? ''}',
+          style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+        ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 28),
         children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Text(
+              widget.member
+                  ? 'Simpan identitas dan kelompok tani anggota.'
+                  : item
+                  ? 'Jumlah dan harga per sak membantu menghitung total transaksi.'
+                  : 'Catat pergerakan kas usaha dengan jelas.',
+              style: const TextStyle(color: muted, fontSize: 13),
+            ),
+          ),
           input(
             'name',
             widget.member ? 'Nama anggota' : 'Nama / pihak terkait',
@@ -885,7 +1030,13 @@ class _EditorState extends State<Editor> {
                         child: Text(s(m, 'name')),
                       ),
                   ],
-                  onChanged: (v) => setState(() => value['member_id'] = v),
+                  onChanged: (v) => setState(() {
+                    value['member_id'] = v;
+                    final member = rows(
+                      widget.book['members'],
+                    ).firstWhere((m) => m['id'] == v, orElse: () => {});
+                    fields['name']!.text = s(member, 'name');
+                  }),
                 ),
               const SizedBox(height: 12),
             ],

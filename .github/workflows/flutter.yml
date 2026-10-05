@@ -2,11 +2,12 @@ name: Flutter Android
 on:
   push:
     paths: ['flutter/**', '.github/workflows/flutter.yml']
-  pull_request:
-    paths: ['flutter/**', '.github/workflows/flutter.yml']
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: flutter-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -24,12 +25,17 @@ jobs:
           channel: stable
           flutter-version: 3.47.6
           cache: true
+      - uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: buku-pupuk-preview-signing-v1
       - run: flutter pub get
       - run: dart format --output=none --set-exit-if-changed lib test
       - run: flutter analyze
       - run: flutter test
-      - run: flutter build apk --debug
+      - run: flutter build apk --profile --target-platform android-arm64
+      - run: cp build/app/outputs/flutter-apk/app-profile.apk build/app/outputs/flutter-apk/Buku-Pupuk-Modern-v2.1.0.apk
       - uses: actions/upload-artifact@v4
         with:
-          name: Buku-Pupuk-Flutter-debug
-          path: flutter/build/app/outputs/flutter-apk/app-debug.apk
+          name: Buku-Pupuk-Modern-v2.1.0
+          path: flutter/build/app/outputs/flutter-apk/Buku-Pupuk-Modern-v2.1.0.apk

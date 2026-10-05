@@ -46,7 +46,7 @@ Firebase menyinkronkan database otomatis. Ekspor Google Drive memakai lembar ber
 flutter build apk --debug
 ```
 
-GitHub Actions memeriksa format, analyzer, test dan membuat APK debug. APK debug tidak dapat dipasang sebagai pembaruan APK produksi bertanda tangan lama. Jangan uninstall aplikasi lama jika masih ada antrean transaksi. Build debug otomatis memakai paket `id.desakabat.bukupupuk.dev` agar dapat dipasang berdampingan. Konfigurasi Firebase masih project asli: transaksi uji akan memengaruhi data asli jika masuk. Gunakan project Firebase uji untuk pengujian transaksi.
+GitHub Actions memeriksa format, analyzer, test dan membuat APK profile untuk Android ARM64. APK unduhan langsung disediakan setelah build; arsip workflow hanya menjadi transport internal. APK debug tidak dapat dipasang sebagai pembaruan APK produksi bertanda tangan lama. Jangan uninstall aplikasi lama jika masih ada antrean transaksi. Build debug/profile otomatis memakai paket `id.desakabat.bukupupuk.dev` agar dapat dipasang berdampingan. Konfigurasi Firebase masih project asli: transaksi uji akan memengaruhi data asli jika masuk. Gunakan project Firebase uji untuk pengujian transaksi.
 
 Paket produksi tetap `id.desakabat.bukupupuk`. Untuk update tanpa uninstall, wajib memakai keystore dan alias APK lama serta versionCode lebih tinggi. Keystore/password tidak ada di repositori. Atur signing release dengan `android/key.properties` lokal, lalu:
 
@@ -72,3 +72,12 @@ Flutter memakai Firebase SDK resmi untuk penyimpanan sesi. Biometrik di versi in
 Pengujian lokal mencakup 18 kasus: pembacaan fixture versi lama, kas dan total Rp9.750.000, utang/piutang, FIFO lintas periode, stok/pembayaran tidak valid, konflik edit, pembulatan laba, tanggal/NIK, antrean offline dan restart, urutan koneksi/data awal, konflik dua klien, pengulangan setelah crash, ekspor Excel numerik, PDF dengan font tertanam, cadangan antrean JSON, escaping CSV dan input/formulir pembelian. PDF uji telah dirender dan diperiksa.
 
 Pengujian sinkronisasi memakai backend tiruan; belum membuktikan integrasi Firebase atau Drive pada HP nyata. Build APK lokal terkendala jaringan Gradle. Workflow GitHub Actions memeriksa build Android. Belum ada pengukuran performa pada perangkat.
+
+
+## Tampilan modern — 2.1.0
+
+Dashboard dengan kartu saldo hijau, ringkasan usaha dua kolom, tombol Beli/Jual pupuk dan transaksi terbaru. Navigasi bawah berisi Ringkasan, Pembelian, Penjualan, Anggota dan Lainnya; menu Lainnya menyediakan ikon serta penjelasan singkat. Kartu transaksi menampilkan nominal pada baris sendiri agar tidak bertabrakan dengan nama panjang. Login, input rupiah, pemilih tanggal dan formulir memakai desain yang konsisten.
+
+Pengujian tambahan memeriksa layar 320/390/768 piksel, perpindahan menu dan login dengan ukuran teks 140%. Total 22 pengujian, termasuk pengujian logika dan ekspor sebelumnya. Tangkapan layar dashboard dan menu telah diperiksa. Filter tanggal hanya berlaku pada Laporan; ringkasan dan stok selalu menampilkan keseluruhan usaha.
+
+Workflow membuat APK profile ARM64 dengan paket `.dev` dan menyimpan keystore uji dalam cache untuk konsistensi build berikutnya. Ini APK uji, tidak menggantikan keystore produksi. Build profile menggunakan kompilasi AOT untuk pengujian performa, tetapi belum ada benchmark perangkat nyata. Perangkat Android ARM64 minimum Android 8.0 diperlukan.
