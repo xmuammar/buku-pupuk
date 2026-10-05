@@ -1,7 +1,0 @@
-/build/
-/native/assets/
-*.apk
-*.idsig
-*.jks
-*.p12
-*.keystore
